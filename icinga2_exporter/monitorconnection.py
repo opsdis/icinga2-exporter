@@ -63,9 +63,13 @@ class MonitorConfig(object, metaclass=Singleton):
             self.user = config[MonitorConfig.config_entry]['user']
             self.passwd = config[MonitorConfig.config_entry]['passwd']
             self.host = config[MonitorConfig.config_entry]['url']
-            self.config_entry = config[MonitorConfig.config_entry]['metric_prefix'] + '_'
-            self.labels = config[MonitorConfig.config_entry]['custom_vars']
-            self.item_to_label = config[MonitorConfig.config_entry]['perfnametolabel']
+            if 'metric_prefix' in config[MonitorConfig.config_entry]:
+                self.config_entry = config[MonitorConfig.config_entry]['metric_prefix'] + '_'
+            if 'host_custom_vars' in config[MonitorConfig.config_entry]:
+                self.labels = config[MonitorConfig.config_entry]['host_custom_vars']
+            if 'perfnametolabel' in config[MonitorConfig.config_entry]:
+                self.item_to_label = config[MonitorConfig.config_entry]['perfnametolabel']
+
             self.url_query_service_perfdata = self.host + '/v1/objects/services'
 
     def get_user(self):
@@ -107,27 +111,34 @@ class MonitorConfig(object, metaclass=Singleton):
                 "attrs": ["__name", "display_name", "check_command", "last_check_result", "vars", "host_name"],
                 "filter": 'service.host_name==\"{}\"'.format(hostname)}
 
-        data_from_monitor, data_json = self.post(self.url_query_service_perfdata, body)
+        #data_from_monitor, data_json = self.post(self.url_query_service_perfdata, body)
+        data_json = self.post(self.url_query_service_perfdata, body)
 
-        if len(data_from_monitor.content) < 3:
-            log.warn('Received no perfdata from Monitor')
+        #if len(data_from_monitor.content) < 3:
+        if not data_json:
+            log.warn('Received no perfdata from Icinga2')
 
         return data_json
 
     def post(self, url, body):
+        #data_from_monitor =
+        data_json = {}
+        try:
+            data_from_monitor = requests.post(url, auth=HTTPBasicAuth(self.user, self.passwd),
+                                              verify=False,
+                                              headers={'Content-Type': 'application/json', 'X-HTTP-Method-Override': 'GET'},
+                                              data=json.dumps(body))
+            data_json = json.loads(data_from_monitor.content)
+            log.debug('API call: ' + data_from_monitor.url)
+            data_from_monitor.raise_for_status()
 
-        data_from_monitor = requests.post(url, auth=HTTPBasicAuth(self.user, self.passwd),
-                                          verify=False,
-                                          headers={'Content-Type': 'application/json', 'X-HTTP-Method-Override': 'GET'},
-                                          data=json.dumps(body))
-        data_json = json.loads(data_from_monitor.content)
-        log.debug('API call: ' + data_from_monitor.url)
-        if data_from_monitor.status_code != 200:
-            log.info("Response", {'status': data_from_monitor.status_code, 'error': data_json['error'],
-                                  'full_error': data_json['full_error']})
-        else:
+            if data_from_monitor.status_code != 200 and data_from_monitor.status_code != 201:
+                log.warn("Not a valid response - {}:{}".format(str(data_from_monitor.content, data_from_monitor.status_code)))
+            else:
+                log.info("call api {}".format(url), {'status': data_from_monitor.status_code,
+                                                     'response_time': data_from_monitor.elapsed.total_seconds()})
+        except requests.exceptions.RequestException as err:
+            log.error("{}".format(str(err)))
 
-            log.info("call api {}".format(url), {'status': data_from_monitor.status_code,
-                                                 'response_time': data_from_monitor.elapsed.total_seconds()})
-
-        return data_from_monitor, data_json
+        #return data_from_monitor, data_json
+        return data_json
