@@ -8,8 +8,8 @@ icinga2:
   passwd: cf593406ffcfd2ef
   # All prometheus metrics will be prefixed with this string
   metric_prefix: icinga2
-  # Example of custom vars that should be added as labels and how to be translated
-  custom_vars:
+  # Example of host customer variables that should be added as labels and how to be translated
+  host_custom_vars:
     # Specify which custom_vars to extract from hosts in icinga2
     - env:
         # Name of the label in Prometheus
@@ -25,10 +25,10 @@ icinga2:
       # The command name
       disk:
         # the label name to be used
-        label: mount
+        label_name: mount
 
 logger:
   # Path and name for the log file. If not set send to stdout
-  logfile: /var/tmp/icinga2-exporter.log
+  #logfile: /var/tmp/icinga2-exporter.log
   # Log level
   level: INFO

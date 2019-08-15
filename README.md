@@ -35,6 +35,7 @@ The icinga2-exporter adds a number of labels to each metrics:
 - service - is the `display_name` in icinga2
 
 Optional icinga2-exporter can be configured to add specific custom variables configured on the host. 
+> Icinga2 support custom varaibles that can be complex data structures - but that is NOT currently supported 
 
 > Labels created from custom variables are all transformed to lowercase. 
 
@@ -52,7 +53,7 @@ This is defined in the configuration like:
       # The command name
       disk:
         # the label name to be used
-        label: mount
+        label_name: mount
 ```
 So if the check command is `disk` the promethues metrics will have a format like, depending on other custom variables :
 
@@ -83,7 +84,7 @@ icinga2:
   # All prometheus metrics will be prefixed with this string
   metric_prefix: icinga2
   # Example of custom vars that should be added as labels and how to be translated
-  custom_vars:
+  host_custom_vars:
     # Specify which custom_vars to extract from hosts in icinga2
     - env:
         # Name of the label in Prometheus
