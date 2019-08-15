@@ -2,19 +2,30 @@
 #port: 9631
 
 icinga2:
-  # The url to the Monitor server
+  # The url to the icinga2 server
   url: https://127.0.0.1:5665
   user: root
   passwd: cf593406ffcfd2ef
+  # All prometheus metrics will be prefixed with this string
   metric_prefix: icinga2
   # Example of custom vars that should be added as labels and how to be translated
   custom_vars:
-    # Specify which custom_vars to extract from Monitor
+    # Specify which custom_vars to extract from hosts in icinga2
     - env:
         # Name of the label in Prometheus
         label_name: environment
     - site:
         label_name: dc
+
+  # This section enable that for specific check commands the perfdata metrics name will not be part of the
+  # prometheus metrics name, instead moved to a label
+  # E.g for the disk command the perfdata name will be set to the label disk like:
+  # icinga2_disk_bytes{hostname="icinga2", service="disk", os="Docker", disk="/var/log/icinga2"}
+  perfnametolabel:
+      # The command name
+      disk:
+        # the label name to be used
+        label: mount
 
 logger:
   # Path and name for the log file. If not set send to stdout

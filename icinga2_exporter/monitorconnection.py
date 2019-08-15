@@ -2,20 +2,20 @@
 """
     Copyright (C) 2019  Opsdis AB
 
-    This file is part of monitor-exporter.
+    This file is part of icinga2-exporter.
 
-    monitor-exporter is free software: you can redistribute it and/or modify
+    icinga2-exporter is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    monitor-exporter is distributed in the hope that it will be useful,
+    icinga2-exporter is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with monitor-exporter.  If not, see <http://www.gnu.org/licenses/>.
+    along with icinga2-exporter-exporter.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 
@@ -42,6 +42,7 @@ class Singleton(type):
 
 class MonitorConfig(object, metaclass=Singleton):
     config_entry = 'icinga2'
+
     def __init__(self, config=None):
         """
         The constructor takes on single argument that is a config dict
@@ -56,6 +57,7 @@ class MonitorConfig(object, metaclass=Singleton):
         self.config_entry = ''
         self.labels = []
         self.url_query_service_perfdata = ''
+        self.item_to_label = []
 
         if config:
             self.user = config[MonitorConfig.config_entry]['user']
@@ -63,6 +65,7 @@ class MonitorConfig(object, metaclass=Singleton):
             self.host = config[MonitorConfig.config_entry]['url']
             self.config_entry = config[MonitorConfig.config_entry]['metric_prefix'] + '_'
             self.labels = config[MonitorConfig.config_entry]['custom_vars']
+            self.item_to_label = config[MonitorConfig.config_entry]['perfnametolabel']
             self.url_query_service_perfdata = self.host + '/v1/objects/services'
 
     def get_user(self):
@@ -95,6 +98,9 @@ class MonitorConfig(object, metaclass=Singleton):
                     labeldict.update({custom_var: prom_label})
         return labeldict
 
+    def get_item_to_label(self):
+        return self.item_to_label
+
     def get_perfdata(self, hostname):
         # Get performance data from Monitor and return in json format
         body = {"joins": ["host.vars"],
@@ -108,21 +114,12 @@ class MonitorConfig(object, metaclass=Singleton):
 
         return data_json
 
-    def get_custom_vars(self, hostname):
-        # Build new URL and get custom_vars from Monitor
-
-        #data_from_monitor, custom_vars_json = self.get(self.url_get_host_custom_vars.format(hostname))
-
-        custom_vars = {}
-        #for var in custom_vars_json:
-        #    custom_vars = var['custom_variables']
-
-        return custom_vars
-
     def post(self, url, body):
 
         data_from_monitor = requests.post(url, auth=HTTPBasicAuth(self.user, self.passwd),
-                                         verify=False, headers={'Content-Type': 'application/json','X-HTTP-Method-Override': 'GET'}, data=json.dumps(body))
+                                          verify=False,
+                                          headers={'Content-Type': 'application/json', 'X-HTTP-Method-Override': 'GET'},
+                                          data=json.dumps(body))
         data_json = json.loads(data_from_monitor.content)
         log.debug('API call: ' + data_from_monitor.url)
         if data_from_monitor.status_code != 200:
