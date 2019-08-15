@@ -44,40 +44,40 @@ class Perfdata:
 
     def get_perfdata(self):
         data_json = self.monitor.get_perfdata(self.query_hostname)
+        if 'results' in data_json:
+            for serivce_attrs in data_json['results']:
+                if 'attrs' in serivce_attrs and 'last_check_result' in serivce_attrs['attrs'] and 'performance_data' in \
+                        serivce_attrs['attrs']['last_check_result']:
+                    check_command = serivce_attrs['attrs']['check_command']
+                    # Get default labels
+                    labels = {'hostname': serivce_attrs['attrs']['host_name'],
+                              'service': serivce_attrs['attrs']['display_name']}
 
-        for serivce_attrs in data_json['results']:
-            if 'attrs' in serivce_attrs and 'last_check_result' in serivce_attrs['attrs'] and 'performance_data' in \
-                    serivce_attrs['attrs']['last_check_result']:
-                check_command = serivce_attrs['attrs']['check_command']
-                # Get default labels
-                labels = {'hostname': serivce_attrs['attrs']['host_name'],
-                          'service': serivce_attrs['attrs']['display_name']}
+                    # For all host custom vars add as label
+                    labels.update(Perfdata.get_host_custom_vars(serivce_attrs))
 
-                # For all host custom vars add as label
-                labels.update(Perfdata.get_host_custom_vars(serivce_attrs))
+                    for perf_string in serivce_attrs['attrs']['last_check_result']['performance_data']:
+                        if type(perf_string) is str:
+                            perf = Perfdata.parse_perf_string(perf_string)
+                        else:
+                            perf = Perfdata.parse_perf_dict(perf_string)
 
-                for perf_string in serivce_attrs['attrs']['last_check_result']['performance_data']:
-                    if type(perf_string) is str:
-                        perf = Perfdata.parse_perf_string(perf_string)
-                    else:
-                        perf = Perfdata.parse_perf_dict(perf_string)
+                        # For each perfdata metrics
+                        for perf_data_key, perf_data_value in perf.items():
 
-                    # For each perfdata metrics
-                    for perf_data_key, perf_data_value in perf.items():
+                            if 'value' in perf_data_value:
+                                prometheus_key = self.format_promethues_metrics_name(check_command, perf_data_key,
+                                                                                     perf_data_value)
 
-                        if 'value' in perf_data_value:
-                            prometheus_key = self.format_promethues_metrics_name(check_command, perf_data_key,
-                                                                                 perf_data_value)
+                                prometheus_key = Perfdata.rem_illegal_chars(prometheus_key)
 
-                            prometheus_key = Perfdata.rem_illegal_chars(prometheus_key)
+                                if check_command in self.item_to_label:
+                                    labels.update(Perfdata.add_labels_by_items(self.item_to_label[check_command]['label_name'],
+                                                                               perf_data_key))
 
-                            if check_command in self.item_to_label:
-                                labels.update(Perfdata.add_labels_by_items(self.item_to_label[check_command]['label'],
-                                                                           perf_data_key))
+                                prometheus_key = Perfdata.add_labels(labels, prometheus_key)
 
-                            prometheus_key = Perfdata.add_labels(labels, prometheus_key)
-
-                            self.perfdatadict.update({prometheus_key: str(perf_data_value['value'])})
+                                self.perfdatadict.update({prometheus_key: str(perf_data_value['value'])})
 
         return self.perfdatadict
 
@@ -177,11 +177,11 @@ class Perfdata:
         labelstring = ''
         sep = ''
         for label_key, label_value in labels.items():
-            if type(label_value) is str or type(label_value) is int:
+            # Can only add custom vars that are simple strings. In incinga these can be complex dict structures
+            #if type(label_value) is str or type(label_value) is int:
+            if type(label_value) is str :
                 labelstring += sep + label_key + '="' + label_value + '"'
                 sep = ', '
-            else:
-                print(label_value)
         return labelstring
 
     @staticmethod
