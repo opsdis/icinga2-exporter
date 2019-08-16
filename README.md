@@ -35,11 +35,11 @@ The icinga2-exporter adds a number of labels to each metrics:
 - service - is the `display_name` in icinga2
 
 Optional icinga2-exporter can be configured to add specific custom variables configured on the host. 
-> Icinga2 support custom varaibles that can be complex data structures - but that is NOT currently supported 
+> Icinga2 support custom variables that can be complex data structures - but that is NOT currently supported 
 
 > Labels created from custom variables are all transformed to lowercase. 
 
-### Icinga2 performance metrics name to labels
+### Performance metrics name to labels
 As describe above the default naming of the promethues name is:
 
     icinga2_<check_command>_<perfname>_<unit>
