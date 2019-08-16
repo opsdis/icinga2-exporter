@@ -125,14 +125,16 @@ class MonitorConfig(object, metaclass=Singleton):
         try:
             data_from_monitor = requests.post(url, auth=HTTPBasicAuth(self.user, self.passwd),
                                               verify=False,
-                                              headers={'Content-Type': 'application/json', 'X-HTTP-Method-Override': 'GET'},
+                                              headers={'Content-Type': 'application/json',
+                                                       'X-HTTP-Method-Override': 'GET'},
                                               data=json.dumps(body), timeout=self.timeout)
             data_json = json.loads(data_from_monitor.content)
             log.debug('API call: ' + data_from_monitor.url)
             data_from_monitor.raise_for_status()
 
             if data_from_monitor.status_code != 200 and data_from_monitor.status_code != 201:
-                log.warn("Not a valid response - {}:{}".format(str(data_from_monitor.content, data_from_monitor.status_code)))
+                log.warn("Not a valid response - {}:{}".format(str(data_from_monitor.content),
+                                                               data_from_monitor.status_code))
             else:
                 log.info("call api {}".format(url), {'status': data_from_monitor.status_code,
                                                      'response_time': data_from_monitor.elapsed.total_seconds()})

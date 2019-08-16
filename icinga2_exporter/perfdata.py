@@ -70,13 +70,12 @@ class Perfdata:
                                 prometheus_key = self.format_promethues_metrics_name(check_command, perf_data_key,
                                                                                      perf_data_value)
 
-
-
                                 # Add more labels based on perfname
                                 if check_command in self.perfname_to_label:
                                     labels.update(
-                                        Perfdata.add_labels_by_items(self.perfname_to_label[check_command]['label_name'],
-                                                                     perf_data_key))
+                                        Perfdata.add_labels_by_items(
+                                            self.perfname_to_label[check_command]['label_name'],
+                                            perf_data_key))
 
                                 prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
                                                                                                      prometheus_key)
