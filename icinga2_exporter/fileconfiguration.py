@@ -38,5 +38,7 @@ def read_config(config_file: str) -> dict:
     except (yaml.YAMLError, yaml.MarkedYAMLError) as err:
         print("Error will reading config file - {}".format(err))
         exit(1)
+    finally:
+        ymlfile.close()
 
     return config
