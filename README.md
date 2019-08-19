@@ -1,3 +1,4 @@
+[![Build Status](https://api.travis-ci.org/opsdis/icinga2-exporter.svg?branch=master)](https://api.travis-ci.org/opsdis/icinga2-exporter)
 icinga2-exporter
 -----------------------
 

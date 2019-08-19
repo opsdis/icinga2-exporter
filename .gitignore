@@ -7,3 +7,5 @@ venv/
 *.egg-info/
 config_my.yml
 dist/
+.coverage
+htmlcov/*

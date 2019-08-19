@@ -1,0 +1,24 @@
+language: python
+python:
+  - "3.6"
+cache: pip
+install:
+  - pip install -r requirements.txt
+script:
+  - python -m unittest discover -v
+  - coverage run  -m unittest discover
+  - coverage report  icinga2_exporter/*
+  - python setup.py sdist
+
+before_deploy:
+  - export RELEASE_PKG_FILE=$(ls dist/icinga2-exporter-*.tar.gz)
+  - echo "deploying $RELEASE_PKG_FILE to GitHub releases"
+deploy:
+  provider: releases
+  api_key:
+    secure: $GITHUB_ACCESS_TOKEN
+  file_glob: true
+  file: "${RELEASE_PKG_FILE}"
+  skip_cleanup: true
+  on:
+    tags: true
