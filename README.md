@@ -2,46 +2,52 @@
 icinga2-exporter
 -----------------------
 
-# Overview 
+# Overview
 
-The cinga2-exporter utilize Icinga2 API to fetch service based performance data and publish it in a way that lets prometheus scrape the 
-performance data as metrics.
+The icinga2-exporter utilizes the [Icinga 2](https://icinga.com/) REST API to fetch service based performance
+data and publish it in a way that lets [Prometheus](https://prometheus.io/) scrape the performance data as metrics.
 
 Benefits:
 
 - Enable advanced queries and aggregation on timeseries
-- Promethues based alerting rules 
+- Prometheus based alerting rules
 - Grafana graphing
-- Utilize investments with Icinga2 of collecting metrics 
+- Utilize investments with Icinga 2 of collecting metrics
 
 
 # Metrics naming
+
 ## Metric names
 Metrics that is scraped with the icinga2-exporter will have the following name structure:
- 
+
     icinga2_<check_command>_<perfname>_<unit>
 
 > The icinga2 prefix can be changed by the configuration
-> Unit is only added if it exists on perfromance data
+> Unit is only added if it exists on performance data
 
-Example from check command `check_ping` will result in two metrics: 
-    
+Example from check command `check_ping` will result in two metrics:
+
     icinga2_ping_rta_seconds
     icinga2_ping_pl_ratio
 
 ## Metric labels
-The icinga2-exporter adds a number of labels to each metrics: 
+
+The icinga2-exporter adds a number of labels to each metrics:
 
 - host - is the `host_name` in icinga2
 - service - is the `display_name` in icinga2
 
-Optional icinga2-exporter can be configured to add specific custom variables configured on the host. 
-> Icinga2 support custom variables that can be complex data structures - but that is NOT currently supported 
+Optional icinga2-exporter can be configured to add specific custom variables configured on the host.
 
-> Labels created from custom variables are all transformed to lowercase. 
+> **Note**:
+>
+> Icinga 2 supports custom variables that can be complex data structures - but that is NOT currently supported.
+
+Labels created from custom variables are all transformed to lowercase.
 
 ### Performance metrics name to labels
-As describe above the default naming of the promethues name is:
+
+As described above the default naming of the Prometheus name is:
 
     icinga2_<check_command>_<perfname>_<unit>
 
@@ -56,18 +62,19 @@ This is defined in the configuration like:
         # the label name to be used
         label_name: mount
 ```
-So if the check command is `disk` the promethues metrics will have a format like, depending on other custom variables :
+So if the check command is `disk` the Prometheus metrics will have a format like, depending on other custom variables :
 
     icinga2_disk_bytes{hostname="icinga2", service="disk", os="Docker", mount="/var/lib/icinga2"} 48356130816.0
-    
+
 If we did not make this translation we would got the following:
 
     icinga2_disk_slashvarslashibslashicinga2_bytes{hostname="icinga2", service="disk", os="Docker"} 48356130816.0
-    
+
  Which is not good from a cardinality point of view.
- 
+
 
 # Configuration
+
 ## icinga2-exporter
 All configuration is made in the config.yml file.
 
@@ -113,14 +120,15 @@ logger:
 > When running with gunicorn the port is selected by gunicorn
 
 # Logging
+
 The log stream is configure in the above config. If `logfile` is not set the logs will go to stdout.
 
-Logs are formatted as json so its easy to store logs in log servers like Loki and Elasticsearch. 
+Logs are formatted as json so its easy to store logs in log servers like Loki and Elasticsearch.
 
 # Prometheus configuration
-Prometheus can be used with static configuration or with dynamic file discovery using the project [icinga2-promdiscovery](https://bitbucket.org/opsdis/icinga2-promdiscovery)
+Prometheus can be used with static configuration or with dynamic file discovery using the project [monitor-promdiscovery](https://github.com/opsdis/monitor-promdiscovery).
 
-Please add the the job to the scrape_configs in prometheus.yml.
+Please add the job to the `scrape_configs` in prometheus.yml.
 
 > The target is the `host_name` configured in icinga2.
 
@@ -144,7 +152,7 @@ scrape_configs:
 
 ```
 
-## File discovery config for usage with `icinga2-promdiscovery`
+## File discovery config for usage with `monitor-promdiscovery`
 
 ```yaml
 
@@ -167,39 +175,41 @@ scrape_configs:
 # Installing
 1. Check out the git repo.
 2. Install dependency
-    
+
     `pip install -r requirements.txt`
-     
-3. Build a distribution 
+
+3. Build a distribution
 
     `python setup.py sdist`
 
 4. Install locally
- 
+
     `pip install dist/icinga2-exporter-X.Y.Z.tar.gz`
-     
+
 
 # Running
-## Development with flask built in webserver 
+
+## Development with flask built in webserver
 
     python -m  icinga2_exporter -f config.yml
 
 The switch -p enable setting of the port.
-    
-## Production with gunicorn 
+
+## Production with gunicorn
+
 Running with default config.yml. The default location is current directory
 
     gunicorn --access-logfile /dev/null -w 4 "wsgi:create_app()"
-    
+
 Set the path to the configuration file.
 
-    gunicorn --access-logfile /dev/null -w 4 "wsgi:create_app('/etc/icinga2-exporter/config.yml')" 
+    gunicorn --access-logfile /dev/null -w 4 "wsgi:create_app('/etc/icinga2-exporter/config.yml')"
 
 > Port for gunicorn is default 8000, but can be set with -b, e.g. `-b localhost:9638`
 
-## Test the connection 
+## Test the connection
 
-Check if exporter is working. 
+Check if exporter is working.
 
     curl -s http://localhost:9638/health
 
@@ -207,7 +217,8 @@ Get metrics for a host where target is a host, `host_name` that exists in icinga
 
     curl -s http://localhost:9638/metrics?target=google.se
 
-# System requierments
+# System requirements
+
 Python 3
 
 For required packages please review `requirements.txt`
