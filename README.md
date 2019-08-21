@@ -75,7 +75,7 @@ Example:
 ```yaml
 
 # Port can be overridden by using -p if running development flask
-#port: 963X
+#port: 9638
 
 icinga2:
   # The url to the icinga2 server
@@ -140,7 +140,7 @@ scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:963X
+        replacement: localhost:9638
 
 ```
 
@@ -161,7 +161,7 @@ scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:963X
+        replacement: localhost:9638
 
 ```
 # Installing
@@ -195,17 +195,17 @@ Set the path to the configuration file.
 
     gunicorn --access-logfile /dev/null -w 4 "wsgi:create_app('/etc/icinga2-exporter/config.yml')" 
 
-> Port for gunicorn is default 8000, but can be set with -b, e.g. `-b localhost:963X`
+> Port for gunicorn is default 8000, but can be set with -b, e.g. `-b localhost:9638`
 
 ## Test the connection 
 
 Check if exporter is working. 
 
-    curl -s http://localhost:963X/health
+    curl -s http://localhost:9638/health
 
 Get metrics for a host where target is a host, `host_name` that exists in icinga2
 
-    curl -s http://localhost:963X/metrics?target=google.se
+    curl -s http://localhost:9638/metrics?target=google.se
 
 # System requierments
 Python 3
