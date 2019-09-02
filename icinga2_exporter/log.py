@@ -23,7 +23,7 @@ import logging
 import datetime
 from pythonjsonlogger import jsonlogger
 
-logger = logging.getLogger('monitor-exporter')
+logger = logging.getLogger('icinga2-exporter')
 
 
 # def configure_logger(log_level="INFO", log_filename=None, format=None):
