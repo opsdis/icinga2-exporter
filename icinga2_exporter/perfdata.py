@@ -51,7 +51,8 @@ class Perfdata:
         if 'results' in data_json:
             for serivce_attrs in data_json['results']:
                 if 'attrs' in serivce_attrs and 'last_check_result' in serivce_attrs['attrs'] and 'performance_data' in \
-                        serivce_attrs['attrs']['last_check_result']:
+                        serivce_attrs['attrs']['last_check_result'] and \
+                        serivce_attrs['attrs']['last_check_result']['performance_data'] is not None:
                     check_command = serivce_attrs['attrs']['check_command']
                     # Get default labels
                     labels = {'hostname': serivce_attrs['attrs']['host_name'],
