@@ -21,6 +21,7 @@
 
 import requests
 import json
+import aiohttp
 from requests.auth import HTTPBasicAuth
 import icinga2_exporter.log as log
 
@@ -142,3 +143,34 @@ class MonitorConfig(object, metaclass=Singleton):
             log.error("{}".format(str(err)))
 
         return data_json
+
+
+    async def async_get_perfdata(self, hostname):
+        # Get performance data from Monitor and return in json format
+        body = {"joins": ["host.vars"],
+                "attrs": ["__name", "display_name", "check_command", "last_check_result", "vars", "host_name"],
+                "filter": 'service.host_name==\"{}\"'.format(hostname)}
+
+        data_json = await self.async_post(self.url_query_service_perfdata, body)
+
+        if not data_json:
+            log.warn('Received no perfdata from Icinga2')
+
+        return data_json
+
+
+    async def async_post(self, url, body):
+        data_json = {}
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, auth=aiohttp.BasicAuth(self.user, self.passwd),
+                                        verify_ssl=False,
+                                        headers={'Content-Type': 'application/json',
+                                                 'X-HTTP-Method-Override': 'GET'},
+                                        data=json.dumps(body)) as response:
+                    re = await response.text()
+                    print(re)
+                    print(response.status)
+                    return json.loads(re)
+        finally:
+            pass

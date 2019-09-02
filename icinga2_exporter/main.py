@@ -24,7 +24,7 @@ import icinga2_exporter.log as log
 import icinga2_exporter.fileconfiguration as config
 import icinga2_exporter.proxy as proxy
 
-from flask import Flask
+from quart import Quart
 import icinga2_exporter.monitorconnection as monitorconnection
 
 
@@ -62,9 +62,9 @@ def start():
     monitorconnection.MonitorConfig(configuration)
     log.info('Starting web app on port: ' + str(port))
 
-    app = Flask(__name__)
+    app = proxy.app #Quart(__name__)
 
-    app.register_blueprint(proxy.app, url_prefix='/')
+    #app.register_blueprint(proxy.app, url_prefix='/')
     app.run(host='0.0.0.0', port=port)
 
 
@@ -86,8 +86,9 @@ def create_app(config_path=None):
     monitorconnection.MonitorConfig(configuration)
     log.info('Starting web app')
 
-    app = Flask(__name__)
+    app = proxy.app # Quart(__name__)
 
-    app.register_blueprint(proxy.app, url_prefix='/')
+    #app.register_blueprint(proxy.app, url_prefix='/')
+    #app.register_blueprint(proxy.app)
 
     return app
