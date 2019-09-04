@@ -169,8 +169,6 @@ class MonitorConfig(object, metaclass=Singleton):
                                                  'X-HTTP-Method-Override': 'GET'},
                                         data=json.dumps(body)) as response:
                     re = await response.text()
-                    print(re)
-                    print(response.status)
                     return json.loads(re)
         finally:
             pass

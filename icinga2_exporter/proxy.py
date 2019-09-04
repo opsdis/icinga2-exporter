@@ -19,7 +19,7 @@
 
 """
 import asyncio
-from quart import request, Response, jsonify, Quart
+from quart import request, Response, jsonify, Quart, Blueprint
 
 from prometheus_client import (CONTENT_TYPE_LATEST, Counter)
 
@@ -27,36 +27,16 @@ from icinga2_exporter.perfdata import Perfdata
 import icinga2_exporter.monitorconnection as monitorconnection
 import icinga2_exporter.log as log
 
-app = Quart( __name__)
+#app = Quart( __name__)
+app = Blueprint( 'icinga2',__name__)
 total_requests = Counter('requests', 'Total requests to monitor-exporter endpoint')
 
-loop = asyncio.new_event_loop()
 
 @app.route('/', methods=['GET'])
 def hello_world():
     return 'monitor-exporter alive'
 
-
 @app.route("/metrics", methods=['GET'])
-def get_metrics():
-    log.info(request.url)
-    target = request.args.get('target')
-
-    log.info('Collect metrics', {'target': target})
-
-    monitor_data = Perfdata(monitorconnection.MonitorConfig(), target)
-
-    # Fetch performance data from Monitor
-    monitor_data.get_perfdata()
-
-    target_metrics = monitor_data.prometheus_format()
-
-    resp = Response(target_metrics)
-    resp.headers['Content-Type'] = CONTENT_TYPE_LATEST
-
-    return resp
-
-@app.route("/ametrics", methods=['GET'])
 async def get_ametrics():
     log.info(request.url)
     target = request.args.get('target')
@@ -66,7 +46,7 @@ async def get_ametrics():
     monitor_data = Perfdata(monitorconnection.MonitorConfig(), target)
 
     # Fetch performance data from Monitor
-    await asyncio.get_event_loop().create_task(monitor_data.async_get_perfdata())
+    await asyncio.get_event_loop().create_task(monitor_data.get_perfdata())
 
     target_metrics = monitor_data.prometheus_format()
 

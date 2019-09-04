@@ -42,50 +42,7 @@ class Perfdata:
         self.perfname_to_label = monitor.get_perfname_to_label()
         self.perfdatadict = {}
 
-    def get_perfdata(self) -> dict:
-        """
-        Collect icinga2 data and parse it into prometheus metrics
-        :return:
-        """
-
-        data_json = self.monitor.get_perfdata(self.query_hostname)
-        if 'results' in data_json:
-            for serivce_attrs in data_json['results']:
-                if 'attrs' in serivce_attrs and 'last_check_result' in serivce_attrs['attrs'] and 'performance_data' in \
-                        serivce_attrs['attrs']['last_check_result']:
-                    check_command = serivce_attrs['attrs']['check_command']
-                    # Get default labels
-                    labels = {'hostname': serivce_attrs['attrs']['host_name'],
-                              'service': serivce_attrs['attrs']['display_name']}
-
-                    # For all host custom vars add as label
-                    labels.update(Perfdata.get_host_custom_vars(serivce_attrs))
-
-                    for perf_string in serivce_attrs['attrs']['last_check_result']['performance_data']:
-                        perf = Perfdata.parse_perfdata(perf_string)
-
-                        # For each perfdata metrics
-                        for perf_data_key, perf_data_value in perf.items():
-
-                            if 'value' in perf_data_value:
-                                prometheus_key = self.format_promethues_metrics_name(check_command, perf_data_key,
-                                                                                     perf_data_value)
-
-                                # Add more labels based on perfname
-                                if check_command in self.perfname_to_label:
-                                    labels.update(
-                                        Perfdata.add_labels_by_items(
-                                            self.perfname_to_label[check_command]['label_name'],
-                                            perf_data_key))
-
-                                prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
-                                                                                                     prometheus_key)
-
-                                self.perfdatadict.update({prometheus_key_with_labels: str(perf_data_value['value'])})
-
-        return self.perfdatadict
-
-    async def async_get_perfdata(self) -> dict:
+    async def get_perfdata(self) -> dict:
         """
         Collect icinga2 data and parse it into prometheus metrics
         :return:
@@ -95,7 +52,8 @@ class Perfdata:
         if 'results' in data_json:
             for serivce_attrs in data_json['results']:
                 if 'attrs' in serivce_attrs and 'last_check_result' in serivce_attrs['attrs'] and 'performance_data' in \
-                        serivce_attrs['attrs']['last_check_result']:
+                        serivce_attrs['attrs']['last_check_result'] and \
+                        serivce_attrs['attrs']['last_check_result']['performance_data'] is not None:
                     check_command = serivce_attrs['attrs']['check_command']
                     # Get default labels
                     labels = {'hostname': serivce_attrs['attrs']['host_name'],

@@ -7,6 +7,9 @@ icinga2-exporter
 The icinga2-exporter utilizes the [Icinga 2](https://icinga.com/) REST API to fetch service based performance
 data and publish it in a way that lets [Prometheus](https://prometheus.io/) scrape the performance data as metrics.
 
+The service is based on [Quart](https://pgjones.gitlab.io/quart/). Quart's is compatible with Flask but based 
+on Asyncio.  
+
 Benefits:
 
 - Enable advanced queries and aggregation on timeseries
@@ -81,7 +84,7 @@ All configuration is made in the config.yml file.
 Example:
 ```yaml
 
-# Port can be overridden by using -p if running development flask
+# Port can be overridden by using -p if running development quart
 #port: 9638
 
 icinga2:
@@ -189,21 +192,21 @@ scrape_configs:
 
 # Running
 
-## Development with flask built in webserver
+## Development with quart built in webserver
 
     python -m  icinga2_exporter -f config.yml
 
 The switch -p enable setting of the port.
 
-## Production with gunicorn
+## Production with gunicorn as ASGI continer 
 
 Running with default config.yml. The default location is current directory
 
-    gunicorn --access-logfile /dev/null -w 4 "wsgi:create_app()"
+    gunicorn --access-logfile /dev/null -w 4 -k uvicorn.workers.UvicornWorker "wsgi:create_app()"
 
 Set the path to the configuration file.
 
-    gunicorn --access-logfile /dev/null -w 4 "wsgi:create_app('/etc/icinga2-exporter/config.yml')"
+    gunicorn --access-logfile /dev/null -w 4 -k uvicorn.workers.UvicornWorker "wsgi:create_app('/etc/icinga2-exporter/config.yml')"
 
 > Port for gunicorn is default 8000, but can be set with -b, e.g. `-b localhost:9638`
 
