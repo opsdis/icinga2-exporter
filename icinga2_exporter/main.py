@@ -20,11 +20,10 @@
 """
 
 import argparse
+from quart import Quart
 import icinga2_exporter.log as log
 import icinga2_exporter.fileconfiguration as config
-import icinga2_exporter.proxy as proxy
-
-from flask import Flask
+from icinga2_exporter.proxy import app as icinga2
 import icinga2_exporter.monitorconnection as monitorconnection
 
 
@@ -57,14 +56,13 @@ def start():
         port = args.port
 
     log.configure_logger(configuration)
-    ##
 
     monitorconnection.MonitorConfig(configuration)
     log.info('Starting web app on port: ' + str(port))
 
-    app = Flask(__name__)
-
-    app.register_blueprint(proxy.app, url_prefix='/')
+    app = Quart(__name__)
+    app.register_blueprint(icinga2, url_prefix='')
+    list_routes(app)
     app.run(host='0.0.0.0', port=port)
 
 
@@ -86,8 +84,14 @@ def create_app(config_path=None):
     monitorconnection.MonitorConfig(configuration)
     log.info('Starting web app')
 
-    app = Flask(__name__)
-
-    app.register_blueprint(proxy.app, url_prefix='/')
+    app = Quart(__name__)
+    app.register_blueprint(icinga2, url_prefix='')
 
     return app
+
+def list_routes(app):
+    import urllib
+    output = []
+    for rule in app.url_map.iter_rules():
+        print("route")
+        print (rule)

@@ -42,12 +42,13 @@ class Perfdata:
         self.perfname_to_label = monitor.get_perfname_to_label()
         self.perfdatadict = {}
 
-    def get_perfdata(self) -> dict:
+    async def get_perfdata(self) -> dict:
         """
         Collect icinga2 data and parse it into prometheus metrics
         :return:
         """
-        data_json = self.monitor.get_perfdata(self.query_hostname)
+
+        data_json = await self.monitor.async_get_perfdata(self.query_hostname)
         if 'results' in data_json:
             for serivce_attrs in data_json['results']:
                 if 'attrs' in serivce_attrs and 'last_check_result' in serivce_attrs['attrs'] and 'performance_data' in \
@@ -60,6 +61,7 @@ class Perfdata:
 
                     # For all host custom vars add as label
                     labels.update(Perfdata.get_host_custom_vars(serivce_attrs))
+
 
                     for perf_string in serivce_attrs['attrs']['last_check_result']['performance_data']:
                         perf = Perfdata.parse_perfdata(perf_string)
