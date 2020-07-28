@@ -62,7 +62,7 @@ def start():
 
     app = Quart(__name__)
     app.register_blueprint(icinga2, url_prefix='')
-    list_routes(app)
+    #list_routes(app)
     app.run(host='0.0.0.0', port=port)
 
 
@@ -88,6 +88,7 @@ def create_app(config_path=None):
     app.register_blueprint(icinga2, url_prefix='')
 
     return app
+
 
 def list_routes(app):
     import urllib
