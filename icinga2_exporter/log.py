@@ -35,9 +35,7 @@ def configure_logger(config):
     else:
         hdlr = logging.StreamHandler()
 
-    formatter = CustomJsonFormatter('(timestamp) (level) (name) (message)')
-    # formatter = jsonlogger.JsonFormatter('%(asctime) %(levelname) %(module) %(funcName) %(lineno) %(message)')
-    # formatter = logger.Formatter('%(asctime)s|%(levelname)s|%(message)s')
+    formatter = CustomJsonFormatter('%(timestamp)s %(level)s %(name)s %(message)s')
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
     logger.setLevel(log_level)
