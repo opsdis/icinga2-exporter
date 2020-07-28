@@ -130,15 +130,18 @@ class Perfdata:
         return metrics
 
     @staticmethod
-    def get_host_custom_vars(serivce_attrs: dict) -> dict:
+    def get_host_custom_vars(service_attrs: dict) -> dict:
         """
         Get all host variables
-        :param serivce_attrs:
+        :param service_attrs:
         :return:
         """
         labels = {}
-        if 'joins' in serivce_attrs and 'host' in serivce_attrs['joins'] and 'vars' in serivce_attrs['joins']['host']:
-            for custom_vars_key, custom_vars_value in serivce_attrs['joins']['host']['vars'].items():
+        if 'joins' in service_attrs \
+                and 'host' in service_attrs['joins'] \
+                and 'vars' in service_attrs['joins']['host'] \
+                and service_attrs['joins']['host']['vars'] is not None:
+            for custom_vars_key, custom_vars_value in service_attrs['joins']['host']['vars'].items():
                 labels[custom_vars_key.lower()] = custom_vars_value
         return labels
 
