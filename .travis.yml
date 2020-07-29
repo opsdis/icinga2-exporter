@@ -1,25 +1,26 @@
 language: python
 python:
-  - "3.6"
-  - "3.8"
+- '3.6'
+- '3.8'
 cache: pip
 install:
-  - pip install -r requirements.txt
+- pip install wheel
+- pip install -r requirements.txt
 script:
-  - python -m unittest discover -v
-  - coverage run  -m unittest discover
-  - coverage report  icinga2_exporter/*
-  - python setup.py sdist
-
+- python -m unittest discover -v
+- coverage run  -m unittest discover
+- coverage report  icinga2_exporter/*.py
+- python setup.py sdist
 before_deploy:
-  - export RELEASE_PKG_FILE=$(ls dist/icinga2-exporter-*.tar.gz)
-  - echo "deploying $RELEASE_PKG_FILE to GitHub releases"
+- export RELEASE_PKG_FILE=$(ls dist/icinga2-exporter-*.tar.gz)
+- echo "deploying $RELEASE_PKG_FILE to GitHub releases"
 deploy:
   provider: releases
-  api_key:
-    secure: $GITHUB_ACCESS_TOKEN
   file_glob: true
   file: "${RELEASE_PKG_FILE}"
-  skip_cleanup: true
+  skip_cleanup: 'true'
   on:
     tags: true
+  api_key:
+    secure: ISBXJXxQ/CrqLc5JCGuTfi2INSbAkLOqDt0Vn4EgJue1tCxsqqlJ/CI0zWy5mNqVgPvwWSOhel6PbNlhasHFSGjlLMxrJcPUjj4p2V6YCbMqdeBxjoJ49Cj9MvG7fxFEvDeLZfliGExicg36CoBefNoHiH0TTHZqFMfUnpoeP6Ud2uHko0uviQO65zSku2tsb+7hpUiBbVf/41BiQvGaZtk+fsKn9/z/UDbSGmXkd83Qf6lQSPwS1Z+ts+RXFB51h7BbH+M2E8P6X5g1MHRKYi2btqi9mq+RUG1ki32KrB0xPUkVyQZkcV2Jk635IRErHS5nK3/jMB4vm1vT6NrRfC4mvicLsQudsw97RuyzEYdRYh+LH8bpWVGFWnLYsnQ4JLJOVtco1Fy8aWzRYDfDCzLoxwnFH8I/Hd61IUVbzB0xqDE1jMkJJd2mr5AtioH+zR99mRHj5LKZlC11jSiYVq/IyqFQRXW9q4Cl+oueVwEBCwBezx+bhvfifcCfVvmQe02S8BuLkiQne48+penUaScfKGrTJ+G/cQ3eDs+8xii6Xs/X59ie7qvnSzI1ZTX39bD56eNNcWgBrc2QJ5tT94/mbIghPiFuyGls12uYT6jpg+iStv665NC2uTRxc2Y2OHHwURasWAvPcZ2nzKlKBO9GE+c0zYCKBt8hpfZHWMk=
+
