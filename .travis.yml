@@ -9,7 +9,7 @@ install:
 script:
 - python -m unittest discover -v
 - coverage run  -m unittest discover
-- coverage report  icinga2_exporter/*
+- coverage report  icinga2_exporter/*.py
 - python setup.py sdist
 before_deploy:
 - export RELEASE_PKG_FILE=$(ls dist/icinga2-exporter-*.tar.gz)
