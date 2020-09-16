@@ -33,6 +33,9 @@ class Perfdata:
             r"([^\s]+|'[^']+')=([-.\d]+)(c|s|ms|us|B|KB|MB|GB|TB|%)?" +
             r"(?:;([-.\d]+))?(?:;([-.\d]+))?(?:;([-.\d]+))?(?:;([-.\d]+))?")
 
+    
+    VALID_METRIC_CHARS_RE = '[a-zA-Z0-9:_]' #https://prometheus.io/docs/instrumenting/writing_exporters/#naming
+
     def __init__(self, monitor: Monitor, query_hostname: str):
         # Get Monitor configuration and build URL
         self.monitor = monitor
@@ -263,11 +266,14 @@ class Perfdata:
     @staticmethod
     def rem_illegal_chars(prometheus_key):
         # Replace illegal characters in metric name
-        prometheus_key = prometheus_key.replace(' ', '_')
-        prometheus_key = prometheus_key.replace('-', '_')
-        prometheus_key = prometheus_key.replace('/', 'slash')
-        prometheus_key = prometheus_key.replace('%', 'percent')
-        return prometheus_key
+        regexp = re.compile(Perfdata.VALID_METRIC_CHARS_RE)
+        result = ''
+        for elem in prometheus_key:
+            if regexp.match(elem):
+                result += elem
+            else:
+                result += '_'
+        return result
 
     @staticmethod
     def add_labels_by_items(label: str, key: str) -> dict:
