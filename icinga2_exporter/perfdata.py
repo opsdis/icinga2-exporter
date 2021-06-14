@@ -90,6 +90,44 @@ class Perfdata:
 
         return self.perfdatadict
 
+    async def get_metadata(self) -> dict:
+        """
+        Collect icinga2 metadata and parse it into prometheus metrics
+        :return:
+        """
+        data_json = await self.monitor.async_get_metadata(self.query_hostname)
+
+        if 'results' in data_json:
+            for host_attrs in data_json['results']:
+                if 'attrs' in host_attrs and '__name' in host_attrs['attrs']:
+
+                    labels = {'hostname': host_attrs['attrs']['name'],
+                              'address': host_attrs['attrs']['address']}
+
+                    # For all host custom vars add as label
+                    labels.update(Perfdata.get_host_custom_vars(host_attrs))
+
+                    # TODO generate calculate missing fields
+                    # <prefix>.metadata.current_attempt
+                    # <prefix>.metadata.execution_time
+                    # <prefix>.metadata.latency
+
+                    attrs_keys = ["downtime_depth","acknowledgement","max_check_attempts","last_reachable", "state", "state_type"]
+                    
+                    for attr_key in attrs_keys:
+                        metadata_value = self.normalize_metadata_value(host_attrs['attrs'].get(attr_key))
+
+
+                        prometheus_key = self.format_prometheus_metrics_name("metadata", attr_key,
+                                                                                     {})
+                        
+                        prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
+                                                                                            prometheus_key)
+
+                        self.perfdatadict.update({prometheus_key_with_labels: str(metadata_value)})
+
+        return self.perfdatadict
+
     def format_prometheus_metrics_name(self, check_command, key, value):
         """
         Format the prometheues metrics name according to naming configuration
@@ -131,6 +169,14 @@ class Perfdata:
         for key, value in self.perfdatadict.items():
             metrics += key + ' ' + value + '\n'
         return metrics
+
+
+    @staticmethod
+    def normalize_metadata_value(value):
+        if type(value) is bool:
+            if value: return 1.0
+            else: return 0.0
+        return value
 
     @staticmethod
     def get_host_custom_vars(service_attrs: dict) -> dict:

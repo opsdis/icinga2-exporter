@@ -54,6 +54,7 @@ class MonitorConfig(object, metaclass=Singleton):
         self.host = ''
         self.headers = {'content-type': 'application/json'}
         self.verify = False
+        self.enable_scrape_metadata = False
         self.retries = 5
         self.timeout = 5
         self.labels = []
@@ -72,8 +73,15 @@ class MonitorConfig(object, metaclass=Singleton):
                 self.perfname_to_label = config[MonitorConfig.config_entry]['perfnametolabel']
             if 'timeout' in config[MonitorConfig.config_entry]:
                 self.timeout = int(config[MonitorConfig.config_entry]['timeout'])
+            if 'enable_scrape_metadata' in config[MonitorConfig.config_entry]:
+                self.enable_scrape_metadata = bool(config[MonitorConfig.config_entry]['enable_scrape_metadata'])
+            config[MonitorConfig.config_entry]['passwd']
 
             self.url_query_service_perfdata = self.host + '/v1/objects/services'
+            self.url_query_host_metadata = self.host + '/v1/objects/hosts/{hostname}'
+
+    def get_enable_scrape_metadata(self):
+        return self.enable_scrape_metadata
 
     def get_user(self):
         return self.user
@@ -168,6 +176,29 @@ class MonitorConfig(object, metaclass=Singleton):
                                         headers={'Content-Type': 'application/json',
                                                  'X-HTTP-Method-Override': 'GET'},
                                         data=json.dumps(body)) as response:
+                    re = await response.text()
+                    return json.loads(re)
+        finally:
+            pass
+
+    async def async_get_metadata(self, hostname):
+        # Get performance data from Monitor and return in json format
+
+        data_json = await self.async_get(self.url_query_host_metadata.format(hostname = hostname))
+
+        if not data_json:
+            log.warn('Received no metadata from Icinga2')
+
+        return data_json
+
+    async def async_get(self, url):
+        data_json = {}
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, auth=aiohttp.BasicAuth(self.user, self.passwd),
+                                        verify_ssl=False,
+                                        headers={'Content-Type': 'application/json',
+                                                 'X-HTTP-Method-Override': 'GET'}) as response:
                     re = await response.text()
                     return json.loads(re)
         finally:

@@ -8,6 +8,8 @@ icinga2:
   passwd: cf593406ffcfd2ef
   # All prometheus metrics will be prefixed with this string
   metric_prefix: icinga2
+  # Enables a separate request to fetch host metadata like state and state_type
+  enable_scrape_metadata: Yes
   # Example of host customer variables that should be added as labels and how to be translated
   host_custom_vars:
     # Specify which custom_vars to extract from hosts in icinga2

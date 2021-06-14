@@ -46,7 +46,14 @@ async def get_ametrics():
     monitor_data = Perfdata(monitorconnection.MonitorConfig(), target)
 
     # Fetch performance data from Monitor
-    await asyncio.get_event_loop().create_task(monitor_data.get_perfdata())
+    loop = asyncio.get_event_loop()
+    fetch_perfdata_task = loop.create_task(monitor_data.get_perfdata())
+
+    if monitorconnection.MonitorConfig().get_enable_scrape_metadata():
+        fetch_metadata_task = loop.create_task(monitor_data.get_metadata())
+        await fetch_metadata_task
+
+    await fetch_perfdata_task
 
     target_metrics = monitor_data.prometheus_format()
 
