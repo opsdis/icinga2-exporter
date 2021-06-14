@@ -73,7 +73,7 @@ class Perfdata:
                         for perf_data_key, perf_data_value in perf.items():
 
                             if 'value' in perf_data_value:
-                                prometheus_key = self.format_promethues_metrics_name(check_command, perf_data_key,
+                                prometheus_key = self.format_prometheus_metrics_name(check_command, perf_data_key,
                                                                                      perf_data_value)
 
                                 # Add more labels based on perfname
@@ -90,7 +90,7 @@ class Perfdata:
 
         return self.perfdatadict
 
-    def format_promethues_metrics_name(self, check_command, key, value):
+    def format_prometheus_metrics_name(self, check_command, key, value):
         """
         Format the prometheues metrics name according to naming configuration
         Typical
