@@ -66,7 +66,7 @@ class Perfdata:
                     labels.update(Perfdata.get_host_custom_vars(serivce_attrs))
 
 
-                    for perf_string in serivce_attrs['attrs']['last_check_result']['performance_data']:
+                    for perf_string in service_attrs['attrs']['last_check_result']['performance_data']:
                         perf = Perfdata.parse_perfdata(perf_string)
 
                         # For each perfdata metrics
