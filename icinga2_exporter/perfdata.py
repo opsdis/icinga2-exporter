@@ -58,6 +58,7 @@ class Perfdata:
                         service_attrs['attrs']['last_check_result'] and \
                         service_attrs['attrs']['last_check_result']['performance_data'] is not None:
                     check_command = service_attrs['attrs']['check_command']
+                    service = service_attrs['attrs']['display_name']
                     # Get default labels
                     labels = {'hostname': service_attrs['attrs']['host_name'],
                               'service': service_attrs['attrs']['display_name']}
@@ -71,7 +72,7 @@ class Perfdata:
                         metadata_value = self.normalize_metadata_value(service_attrs['attrs'].get(entry))
 
 
-                        prometheus_key = self.format_prometheus_metrics_name(check_command + "_metadata", entry,
+                        prometheus_key = self.format_prometheus_metrics_name("{}_{}_{}".format(check_command, service, "metadata"), entry,
                                                                                      {})
                         
                         prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
