@@ -72,7 +72,7 @@ class Perfdata:
                         metadata_value = self.normalize_metadata_value(service_attrs['attrs'].get(entry))
 
 
-                        prometheus_key = self.format_prometheus_metrics_name("{}_{}_{}".format(check_command, service, "metadata"), entry,
+                        prometheus_key = self.format_prometheus_metrics_name("{}_{}".format(check_command, "metadata"), entry,
                                                                                      {})
                         
                         prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
