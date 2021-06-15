@@ -53,19 +53,33 @@ class Perfdata:
 
         data_json = await self.monitor.async_get_perfdata(self.query_hostname)
         if 'results' in data_json:
-            for serivce_attrs in data_json['results']:
-                if 'attrs' in serivce_attrs and 'last_check_result' in serivce_attrs['attrs'] and 'performance_data' in \
-                        serivce_attrs['attrs']['last_check_result'] and \
-                        serivce_attrs['attrs']['last_check_result']['performance_data'] is not None:
-                    check_command = serivce_attrs['attrs']['check_command']
+            for service_attrs in data_json['results']:
+                if 'attrs' in service_attrs and 'last_check_result' in service_attrs['attrs'] and 'performance_data' in \
+                        service_attrs['attrs']['last_check_result'] and \
+                        service_attrs['attrs']['last_check_result']['performance_data'] is not None:
+                    check_command = service_attrs['attrs']['check_command']
                     # Get default labels
-                    labels = {'hostname': serivce_attrs['attrs']['host_name'],
-                              'service': serivce_attrs['attrs']['display_name']}
+                    labels = {'hostname': service_attrs['attrs']['host_name'],
+                              'service': service_attrs['attrs']['display_name']}
 
                     # For all host custom vars add as label
-                    labels.update(Perfdata.get_host_custom_vars(serivce_attrs))
+                    labels.update(Perfdata.get_host_custom_vars(service_attrs))
+
+                    # Export Metadata
+                    for entry in ["downtime_depth", "acknowledgement","max_check_attempts", "last_reachable", "state", "state_type"]:
+                        
+                        metadata_value = self.normalize_metadata_value(service_attrs['attrs'].get(entry))
 
 
+                        prometheus_key = self.format_prometheus_metrics_name(check_command + "_metadata", entry,
+                                                                                     {})
+                        
+                        prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
+                                                                                            prometheus_key)
+
+                        self.perfdatadict.update({prometheus_key_with_labels: str(metadata_value)})
+
+                    # Export Perfdata
                     for perf_string in service_attrs['attrs']['last_check_result']['performance_data']:
                         perf = Perfdata.parse_perfdata(perf_string)
 
@@ -118,7 +132,7 @@ class Perfdata:
                         metadata_value = self.normalize_metadata_value(host_attrs['attrs'].get(attr_key))
 
 
-                        prometheus_key = self.format_prometheus_metrics_name("metadata", attr_key,
+                        prometheus_key = self.format_prometheus_metrics_name("host_metadata", attr_key,
                                                                                      {})
                         
                         prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
