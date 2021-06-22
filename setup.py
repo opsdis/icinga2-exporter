@@ -19,8 +19,8 @@ setup(
     #version_config=True,
     version_config={
         "template": "{tag}",
-        "dev_template": "{tag}.post{ccount}+git.{sha}",
-        "dirty_template": "{tag}.post{ccount}+git.{sha}.dirty",
+        "dev_template": "{tag}.post{ccount}_git.{sha}",
+        "dirty_template": "{tag}.post{ccount}_git.{sha}.dirty",
         "starting_version": "0.0.1",
         "version_callback": None,
         "version_file": None,
