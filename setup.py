@@ -6,7 +6,7 @@ from os.path import basename, dirname, join, splitext
 
 from setuptools import setup, find_packages
 
-from manage_version import get_version
+#from manage_version import get_version
 
 
 def read(fname):
@@ -15,7 +15,9 @@ def read(fname):
 
 setup(
     name='icinga2-exporter',
-    version=get_version(),
+    #version=get_version(),
+    version_config=True,
+    setup_requires=['setuptools-git-versioning'],
     packages=find_packages(),
     author='thenodon',
     author_email='anders@opsdis.com',
