@@ -53,27 +53,42 @@ class Perfdata:
 
         data_json = await self.monitor.async_get_perfdata(self.query_hostname)
         if 'results' in data_json:
-            for serivce_attrs in data_json['results']:
-                if 'attrs' in serivce_attrs and 'last_check_result' in serivce_attrs['attrs'] and 'performance_data' in \
-                        serivce_attrs['attrs']['last_check_result'] and \
-                        serivce_attrs['attrs']['last_check_result']['performance_data'] is not None:
-                    check_command = serivce_attrs['attrs']['check_command']
+            for service_attrs in data_json['results']:
+                if 'attrs' in service_attrs and 'last_check_result' in service_attrs['attrs'] and 'performance_data' in \
+                        service_attrs['attrs']['last_check_result'] and \
+                        service_attrs['attrs']['last_check_result']['performance_data'] is not None:
+                    check_command = service_attrs['attrs']['check_command']
+                    service = service_attrs['attrs']['display_name']
                     # Get default labels
-                    labels = {'hostname': serivce_attrs['attrs']['host_name'],
-                              'service': serivce_attrs['attrs']['display_name']}
+                    labels = {'hostname': service_attrs['attrs']['host_name'],
+                              'service': service_attrs['attrs']['display_name']}
 
                     # For all host custom vars add as label
-                    labels.update(Perfdata.get_host_custom_vars(serivce_attrs))
+                    labels.update(Perfdata.get_host_custom_vars(service_attrs))
+
+                    # Export Metadata
+                    for entry in ["downtime_depth", "acknowledgement","max_check_attempts", "last_reachable", "state", "state_type"]:
+                        
+                        metadata_value = self.normalize_metadata_value(service_attrs['attrs'].get(entry))
 
 
-                    for perf_string in serivce_attrs['attrs']['last_check_result']['performance_data']:
+                        prometheus_key = self.format_prometheus_metrics_name("{}_{}".format(check_command, "metadata"), entry,
+                                                                                     {})
+                        
+                        prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
+                                                                                            prometheus_key)
+
+                        self.perfdatadict.update({prometheus_key_with_labels: str(metadata_value)})
+
+                    # Export Perfdata
+                    for perf_string in service_attrs['attrs']['last_check_result']['performance_data']:
                         perf = Perfdata.parse_perfdata(perf_string)
 
                         # For each perfdata metrics
                         for perf_data_key, perf_data_value in perf.items():
 
                             if 'value' in perf_data_value:
-                                prometheus_key = self.format_promethues_metrics_name(check_command, perf_data_key,
+                                prometheus_key = self.format_prometheus_metrics_name(check_command, perf_data_key,
                                                                                      perf_data_value)
 
                                 # Add more labels based on perfname
@@ -90,7 +105,45 @@ class Perfdata:
 
         return self.perfdatadict
 
-    def format_promethues_metrics_name(self, check_command, key, value):
+    async def get_metadata(self) -> dict:
+        """
+        Collect icinga2 metadata and parse it into prometheus metrics
+        :return:
+        """
+        data_json = await self.monitor.async_get_metadata(self.query_hostname)
+
+        if 'results' in data_json:
+            for host_attrs in data_json['results']:
+                if 'attrs' in host_attrs and '__name' in host_attrs['attrs']:
+
+                    labels = {'hostname': host_attrs['attrs']['name'],
+                              'address': host_attrs['attrs']['address']}
+
+                    # For all host custom vars add as label
+                    labels.update(Perfdata.get_host_custom_vars(host_attrs))
+
+                    # TODO generate calculate missing fields
+                    # <prefix>.metadata.current_attempt
+                    # <prefix>.metadata.execution_time
+                    # <prefix>.metadata.latency
+
+                    attrs_keys = ["downtime_depth","acknowledgement","max_check_attempts","last_reachable", "state", "state_type"]
+                    
+                    for attr_key in attrs_keys:
+                        metadata_value = self.normalize_metadata_value(host_attrs['attrs'].get(attr_key))
+
+
+                        prometheus_key = self.format_prometheus_metrics_name("host_metadata", attr_key,
+                                                                                     {})
+                        
+                        prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
+                                                                                            prometheus_key)
+
+                        self.perfdatadict.update({prometheus_key_with_labels: str(metadata_value)})
+
+        return self.perfdatadict
+
+    def format_prometheus_metrics_name(self, check_command, key, value):
         """
         Format the prometheues metrics name according to naming configuration
         Typical
@@ -131,6 +184,14 @@ class Perfdata:
         for key, value in self.perfdatadict.items():
             metrics += key + ' ' + value + '\n'
         return metrics
+
+
+    @staticmethod
+    def normalize_metadata_value(value):
+        if type(value) is bool:
+            if value: return 1.0
+            else: return 0.0
+        return value
 
     @staticmethod
     def get_host_custom_vars(service_attrs: dict) -> dict:
