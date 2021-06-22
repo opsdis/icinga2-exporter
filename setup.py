@@ -19,7 +19,7 @@ setup(
     #version_config=True,
     version_config={
         "template": "{tag}",
-        "dev_template": "{sha}",
+        "dev_template": "{tag}.dev{ccount}",
         "dirty_template": "{sha}",
         "starting_version": "0.0.1",
         "version_callback": None,
