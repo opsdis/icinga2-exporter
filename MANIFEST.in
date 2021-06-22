@@ -1,6 +1,4 @@
 include README.md
 include COPYING
 include requirements.txt
-include manage_version.py
-include RELEASE-VERSION
 include config.yml
