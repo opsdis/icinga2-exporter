@@ -7,8 +7,7 @@ COPY setup.py .
 COPY manage_version.py .
 COPY MANIFEST.in .
 COPY README.md .
-# COPY config.yml .
-# COPY COPYING .
+
 ENV TAG=1.0.0
 RUN python setup.py sdist
 RUN ls -l dist
