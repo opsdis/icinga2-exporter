@@ -38,11 +38,9 @@ def hello_world():
 
 
 @app.route("/metrics", methods=['GET'])
-async def get_ametrics():
+async def get_metrics():
     log.info(request.url)
     target = request.args.get('target')
-
-    log.info('Collect metrics', {'target': target})
 
     monitor_data = Perfdata(monitorconnection.MonitorConfig(), target)
 
