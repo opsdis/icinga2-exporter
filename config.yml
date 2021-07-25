@@ -4,8 +4,14 @@
 icinga2:
   # The url to the icinga2 server
   url: https://127.0.0.1:5665
+  # The icinga2 username
   user: root
+  # The icinga2 password
   passwd: cf593406ffcfd2ef
+  # Verify the ssl certificate, default false
+  verify: false
+  # Timeout accessing icinga server, default 5 sec
+  timeout: 5
   # All prometheus metrics will be prefixed with this string
   metric_prefix: icinga2
   # Enables a separate request to fetch host metadata like state and state_type

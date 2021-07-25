@@ -74,13 +74,29 @@ If we did not make this translation we would got the following:
 
     icinga2_disk_slashvarslashibslashicinga2_bytes{hostname="icinga2", service="disk", os="Docker"} 48356130816.0
 
- Which is not good from a cardinality point of view.
+This would not be good from a cardinality point of view.
+
+# Scrape response
+
+When requests are made to the exporter the following responses are possible:
+
+- A target that exists - return all metrics and http status 200
+- A target does not exists - return no metrics, empty response, and http status 200
+- The export fail to scrape metrics from icinga2 - return empty response and http status 500
+
+In the last scenario the exporter will log the reason for the failed scrape. A failed scrape can
+have multiple reasons, for example:
+
+- The icinga2 server is not responding
+- Not having valid credentials
+- Request to icinga2 timeout
 
 
 # Configuration
 
 ## icinga2-exporter
-All configuration is made in the config.yml file.
+
+The `icinga2-exporter` is configured by a yaml based configuration file.
 
 Example:
 ```yaml
@@ -123,20 +139,20 @@ logger:
 
 > When running with gunicorn the port is selected by gunicorn
 
-# Logging
+## Logging
 
 The log stream is configure in the above config. If `logfile` is not set the logs will go to stdout.
 
 Logs are formatted as json so its easy to store logs in log servers like Loki and Elasticsearch.
 
-# Prometheus configuration
+## Prometheus configuration
 Prometheus can be used with static configuration or with dynamic file discovery using the project [monitor-promdiscovery](https://github.com/opsdis/monitor-promdiscovery).
 
 Please add the job to the `scrape_configs` in prometheus.yml.
 
 > The target is the `host_name` configured in icinga2.
 
-## Static config
+### Static config
 ```yaml
 
 scrape_configs:
@@ -156,7 +172,7 @@ scrape_configs:
 
 ```
 
-## File discovery config for usage with `monitor-promdiscovery`
+### File discovery config for usage with `monitor-promdiscovery`
 
 ```yaml
 
@@ -193,11 +209,15 @@ scrape_configs:
 
 # Running
 
-## Development with quart built in webserver
+## Development
+
+Run the `icinga2-exporter` with the built-in Quart webserver:
 
     python -m  icinga2_exporter -f config.yml
 
-The switch -p enable setting of the port.
+To see all options:
+
+    python -m  icinga2_exporter -h
 
 ## Production with gunicorn as ASGI continer 
 

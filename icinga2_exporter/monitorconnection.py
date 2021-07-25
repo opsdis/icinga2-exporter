@@ -18,12 +18,20 @@
     along with icinga2-exporter-exporter.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-
-import requests
+import asyncio
 import json
+
 import aiohttp
-from requests.auth import HTTPBasicAuth
+from aiohttp import ClientConnectorError
+from typing import Dict, Any, Union
+
 import icinga2_exporter.log as log
+
+
+class ScrapeExecption(Exception):
+    def __init__(self, message: str, err:Exception):
+        self.message = message
+        self.err = err
 
 
 class Singleton(type):
@@ -73,9 +81,10 @@ class MonitorConfig(object, metaclass=Singleton):
                 self.perfname_to_label = config[MonitorConfig.config_entry]['perfnametolabel']
             if 'timeout' in config[MonitorConfig.config_entry]:
                 self.timeout = int(config[MonitorConfig.config_entry]['timeout'])
+            if 'verify' in config[MonitorConfig.config_entry]:
+                self.verify = bool(config[MonitorConfig.config_entry]['verify'])
             if 'enable_scrape_metadata' in config[MonitorConfig.config_entry]:
                 self.enable_scrape_metadata = bool(config[MonitorConfig.config_entry]['enable_scrape_metadata'])
-            config[MonitorConfig.config_entry]['passwd']
 
             self.url_query_service_perfdata = self.host + '/v1/objects/services'
             self.url_query_host_metadata = self.host + '/v1/objects/hosts/{hostname}'
@@ -116,47 +125,12 @@ class MonitorConfig(object, metaclass=Singleton):
     def get_perfname_to_label(self):
         return self.perfname_to_label
 
-    def get_perfdata(self, hostname):
+    async def async_get_perfdata(self, hostname) -> Dict[str,Any]:
         # Get performance data from Monitor and return in json format
         body = {"joins": ["host.vars"],
-                "attrs": ["__name", "display_name", "check_command", "last_check_result", "vars", "host_name"],
-                "filter": 'service.host_name==\"{}\"'.format(hostname)}
-
-        data_json = self.post(self.url_query_service_perfdata, body)
-
-        if not data_json:
-            log.warn('Received no perfdata from Icinga2')
-
-        return data_json
-
-    def post(self, url, body):
-        data_json = {}
-        try:
-            data_from_monitor = requests.post(url, auth=HTTPBasicAuth(self.user, self.passwd),
-                                              verify=False,
-                                              headers={'Content-Type': 'application/json',
-                                                       'X-HTTP-Method-Override': 'GET'},
-                                              data=json.dumps(body), timeout=self.timeout)
-            data_json = json.loads(data_from_monitor.content)
-            log.debug('API call: ' + data_from_monitor.url)
-            data_from_monitor.raise_for_status()
-
-            if data_from_monitor.status_code != 200 and data_from_monitor.status_code != 201:
-                log.warn("Not a valid response - {}:{}".format(str(data_from_monitor.content),
-                                                               data_from_monitor.status_code))
-            else:
-                log.info("call api {}".format(url), {'status': data_from_monitor.status_code,
-                                                     'response_time': data_from_monitor.elapsed.total_seconds()})
-        except requests.exceptions.RequestException as err:
-            log.error("{}".format(str(err)))
-
-        return data_json
-
-
-    async def async_get_perfdata(self, hostname):
-        # Get performance data from Monitor and return in json format
-        body = {"joins": ["host.vars"],
-                "attrs": ["__name", "display_name", "check_command", "last_check_result", "vars", "host_name", "downtime_depth", "acknowledgement","max_check_attempts", "last_reachable", "state", "state_type"],
+                "attrs": ["__name", "display_name", "check_command", "last_check_result", "vars", "host_name",
+                          "downtime_depth", "acknowledgement", "max_check_attempts", "last_reachable", "state",
+                          "state_type"],
                 "filter": 'service.host_name==\"{}\"'.format(hostname)}
 
         data_json = await self.async_post(self.url_query_service_perfdata, body)
@@ -166,40 +140,59 @@ class MonitorConfig(object, metaclass=Singleton):
 
         return data_json
 
+    async def async_post(self, url, body) -> Dict[str, Any]:
 
-    async def async_post(self, url, body):
-        data_json = {}
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, auth=aiohttp.BasicAuth(self.user, self.passwd),
-                                        verify_ssl=False,
+                                        verify_ssl=self.verify,
+                                        timeout=self.timeout,
                                         headers={'Content-Type': 'application/json',
                                                  'X-HTTP-Method-Override': 'GET'},
                                         data=json.dumps(body)) as response:
-                    re = await response.text()
-                    return json.loads(re)
-        finally:
-            pass
 
-    async def async_get_metadata(self, hostname):
+                    re = await response.text()
+
+                    if response.status != 200 and response.status != 201:
+                        log.warn(f"{response.reason} status {response.status}")
+                        return {}
+
+                    return json.loads(re)
+
+        except asyncio.TimeoutError as err:
+            raise ScrapeExecption(f"Timeout to {self.host} after {self.timeout}", err)
+        except ClientConnectorError as err:
+            raise ScrapeExecption("Connection error", err)
+
+    async def async_get_metadata(self, hostname) -> Dict[str, Any]:
         # Get performance data from Monitor and return in json format
 
-        data_json = await self.async_get(self.url_query_host_metadata.format(hostname = hostname))
+        data_json = await self.async_get(self.url_query_host_metadata.format(hostname=hostname))
 
         if not data_json:
             log.warn('Received no metadata from Icinga2')
 
         return data_json
 
-    async def async_get(self, url):
-        data_json = {}
+    async def async_get(self, url) -> Dict[str, Any]:
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, auth=aiohttp.BasicAuth(self.user, self.passwd),
-                                        verify_ssl=False,
-                                        headers={'Content-Type': 'application/json',
-                                                 'X-HTTP-Method-Override': 'GET'}) as response:
+                                       verify_ssl=self.verify,
+                                       timeout=self.timeout,
+                                       headers={'Content-Type': 'application/json',
+                                                'X-HTTP-Method-Override': 'GET'}) as response:
+
                     re = await response.text()
+
+                    if response.status != 200:
+                        log.warn(f"{response.reason} status {response.status}")
+                        return {}
+
                     return json.loads(re)
-        finally:
-            pass
+
+        except asyncio.TimeoutError as err:
+            raise ScrapeExecption(f"Timeout to {self.host} after {self.timeout}", err)
+        except ClientConnectorError as err:
+            raise ScrapeExecption("Connection error", err)
