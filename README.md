@@ -38,7 +38,7 @@ Example from check command `check_ping` will result in two metrics:
 
 The icinga2-exporter adds a number of labels to each metrics:
 
-- host - is the `host_name` in icinga2
+- hostname - is the `host_name` in icinga2
 - service - is the `display_name` in icinga2
 
 Optional icinga2-exporter can be configured to add specific custom variables configured on the host.
@@ -75,6 +75,12 @@ If we did not make this translation we would got the following:
     icinga2_disk_slashvarslashibslashicinga2_bytes{hostname="icinga2", service="disk", os="Docker"} 48356130816.0
 
 This would not be good from a cardinality point of view.
+
+# Scrape duration
+
+The scrape duration is a metrics that is reported for all targets. 
+
+    icinga2_scrape_duration_seconds{hostname="<target>", server="<icinga2_server_url>"} 0.160983
 
 # Scrape response
 

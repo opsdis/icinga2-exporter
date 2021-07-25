@@ -19,13 +19,13 @@
 
 """
 import asyncio
+from datetime import datetime
 
 from prometheus_client import (CONTENT_TYPE_LATEST, Counter)
 from quart import request, Response, jsonify, Blueprint
 
 import icinga2_exporter.log as log
 import icinga2_exporter.monitorconnection as monitorconnection
-
 from icinga2_exporter.perfdata import Perfdata
 
 app = Blueprint('icinga2', __name__)
@@ -47,6 +47,7 @@ async def get_ametrics():
     monitor_data = Perfdata(monitorconnection.MonitorConfig(), target)
 
     # Fetch performance data from Monitor
+    start_time = datetime.now()
     try:
         loop = asyncio.get_event_loop()
         fetch_perfdata_task = loop.create_task(monitor_data.get_perfdata())
@@ -56,6 +57,10 @@ async def get_ametrics():
             await fetch_metadata_task
 
         await fetch_perfdata_task
+        exec_time = datetime.now() - start_time
+        monitor_data.add_perfdata("scrape_duration_seconds",
+                                  {'hostname': target, 'server': monitorconnection.MonitorConfig().get_url()},
+                                  exec_time.total_seconds())
 
         target_metrics = monitor_data.prometheus_format()
 
@@ -68,6 +73,7 @@ async def get_ametrics():
         resp = Response("")
         resp.status_code = 500
         return resp
+
 
 @app.route("/health", methods=['GET'])
 def get_health():
