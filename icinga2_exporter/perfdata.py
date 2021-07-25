@@ -46,12 +46,12 @@ class Perfdata:
         self.perfname_to_label = monitor.get_perfname_to_label()
         self.perfdatadict = {}
 
-    def add_perfdata(self, key:str, labels:Dict[str, str], value:float):
+    def add_perfdata(self, key: str, labels: Dict[str, str], value: float):
         labels_str = ""
         sep = ''
-        for k,v in labels.items():
+        for k, v in labels.items():
             labels_str = f"{labels_str}{sep}{k}=\"{v}\""
-            sep=', '
+            sep = ', '
         metric = {f"{self.prefix}{key}{{{labels_str}}}": str(value)}
         self.perfdatadict.update(metric)
 
@@ -64,7 +64,8 @@ class Perfdata:
         data_json = await self.monitor.async_get_perfdata(self.query_hostname)
         if 'results' in data_json:
             for service_attrs in data_json['results']:
-                if 'attrs' in service_attrs and 'last_check_result' in service_attrs['attrs'] and 'performance_data' in \
+                if 'attrs' in service_attrs and 'last_check_result' in service_attrs['attrs'] and \
+                        'performance_data' in \
                         service_attrs['attrs']['last_check_result'] and \
                         service_attrs['attrs']['last_check_result']['performance_data'] is not None:
                     check_command = service_attrs['attrs']['check_command']
