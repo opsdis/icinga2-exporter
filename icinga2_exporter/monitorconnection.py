@@ -20,16 +20,17 @@
 """
 import asyncio
 import json
+import time
 
 import aiohttp
 from aiohttp import ClientConnectorError
-from typing import Dict, Any, Union
+from typing import Dict, Any
 
 import icinga2_exporter.log as log
 
 
 class ScrapeExecption(Exception):
-    def __init__(self, message: str, err:Exception):
+    def __init__(self, message: str, err: Exception):
         self.message = message
         self.err = err
 
@@ -125,7 +126,7 @@ class MonitorConfig(object, metaclass=Singleton):
     def get_perfname_to_label(self):
         return self.perfname_to_label
 
-    async def async_get_perfdata(self, hostname) -> Dict[str,Any]:
+    async def async_get_perfdata(self, hostname) -> Dict[str, Any]:
         # Get performance data from Monitor and return in json format
         body = {"joins": ["host.vars"],
                 "attrs": ["__name", "display_name", "check_command", "last_check_result", "vars", "host_name",
@@ -144,6 +145,7 @@ class MonitorConfig(object, metaclass=Singleton):
 
         try:
             async with aiohttp.ClientSession() as session:
+                start_time = time.monotonic()
                 async with session.post(url, auth=aiohttp.BasicAuth(self.user, self.passwd),
                                         verify_ssl=self.verify,
                                         timeout=self.timeout,
@@ -152,7 +154,8 @@ class MonitorConfig(object, metaclass=Singleton):
                                         data=json.dumps(body)) as response:
 
                     re = await response.text()
-
+                    log.debug(f"method=post url={url} status={response.status} "
+                              f"response_time={time.monotonic() - start_time}")
                     if response.status != 200 and response.status != 201:
                         log.warn(f"{response.reason} status {response.status}")
                         return {}
@@ -178,6 +181,7 @@ class MonitorConfig(object, metaclass=Singleton):
 
         try:
             async with aiohttp.ClientSession() as session:
+                start_time = time.monotonic()
                 async with session.get(url, auth=aiohttp.BasicAuth(self.user, self.passwd),
                                        verify_ssl=self.verify,
                                        timeout=self.timeout,
@@ -185,7 +189,8 @@ class MonitorConfig(object, metaclass=Singleton):
                                                 'X-HTTP-Method-Override': 'GET'}) as response:
 
                     re = await response.text()
-
+                    log.debug(f"method=get url={url} status={response.status} "
+                              f"response_time={time.monotonic() - start_time}")
                     if response.status != 200:
                         log.warn(f"{response.reason} status {response.status}")
                         return {}
