@@ -20,6 +20,7 @@
 """
 
 import logging
+from quart.logging import default_handler, serving_handler
 import datetime
 from pythonjsonlogger import jsonlogger
 
@@ -28,6 +29,7 @@ logger = logging.getLogger('icinga2-exporter')
 
 # def configure_logger(log_level="INFO", log_filename=None, format=None):
 def configure_logger(config):
+
     log_filename, log_level = read_config(config)
 
     if log_filename:
@@ -40,11 +42,15 @@ def configure_logger(config):
     logger.addHandler(hdlr)
     logger.setLevel(log_level)
 
-    # Add our handler to all loggers
-    root = logging.root
-    existing = root.manager.loggerDict.keys()
-    for log1 in [logging.getLogger(name) for name in existing]:
-        log1.addHandler(hdlr)
+    # Setting handler for quart
+    if log_filename:
+        logging.getLogger('quart.serving').removeHandler(serving_handler)
+        logging.getLogger('quart.serving').addHandler(hdlr)
+        logging.getLogger('quart.app').removeHandler(default_handler)
+        logging.getLogger('quart.app').addHandler(hdlr)
+    else:
+        serving_handler.setFormatter(formatter)
+        default_handler.setFormatter(formatter)
 
     # werkzeug = logging.getLogger('werkzeug')
     # werkzeug.setLevel("WARNING")

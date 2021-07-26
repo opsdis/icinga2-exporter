@@ -20,9 +20,11 @@
 """
 
 import re
+
 import urllib3
-import icinga2_exporter.monitorconnection as Monitor
+from typing import Dict
 import icinga2_exporter.log as log
+import icinga2_exporter.monitorconnection as Monitor
 
 # Disable InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -33,8 +35,7 @@ class Perfdata:
             r"([^\s]+|'[^']+')=([-.\d]+)(c|s|ms|us|B|KB|MB|GB|TB|%)?" +
             r"(?:;([-.\d]+))?(?:;([-.\d]+))?(?:;([-.\d]+))?(?:;([-.\d]+))?")
 
-    
-    VALID_METRIC_CHARS_RE = '[a-zA-Z0-9:_]' #https://prometheus.io/docs/instrumenting/writing_exporters/#naming
+    VALID_METRIC_CHARS_RE = '[a-zA-Z0-9:_]'  # https://prometheus.io/docs/instrumenting/writing_exporters/#naming
 
     def __init__(self, monitor: Monitor, query_hostname: str):
         # Get Monitor configuration and build URL
@@ -45,6 +46,15 @@ class Perfdata:
         self.perfname_to_label = monitor.get_perfname_to_label()
         self.perfdatadict = {}
 
+    def add_perfdata(self, key: str, labels: Dict[str, str], value: float):
+        labels_str = ""
+        sep = ''
+        for k, v in labels.items():
+            labels_str = f"{labels_str}{sep}{k}=\"{v}\""
+            sep = ', '
+        metric = {f"{self.prefix}{key}{{{labels_str}}}": str(value)}
+        self.perfdatadict.update(metric)
+
     async def get_perfdata(self) -> dict:
         """
         Collect icinga2 data and parse it into prometheus metrics
@@ -54,7 +64,8 @@ class Perfdata:
         data_json = await self.monitor.async_get_perfdata(self.query_hostname)
         if 'results' in data_json:
             for service_attrs in data_json['results']:
-                if 'attrs' in service_attrs and 'last_check_result' in service_attrs['attrs'] and 'performance_data' in \
+                if 'attrs' in service_attrs and 'last_check_result' in service_attrs['attrs'] and \
+                        'performance_data' in \
                         service_attrs['attrs']['last_check_result'] and \
                         service_attrs['attrs']['last_check_result']['performance_data'] is not None:
                     check_command = service_attrs['attrs']['check_command']
@@ -67,16 +78,14 @@ class Perfdata:
                     labels.update(Perfdata.get_host_custom_vars(service_attrs))
 
                     # Export Metadata
-                    for entry in ["downtime_depth", "acknowledgement","max_check_attempts", "last_reachable", "state", "state_type"]:
-                        
+                    for entry in ["downtime_depth", "acknowledgement", "max_check_attempts", "last_reachable", "state",
+                                  "state_type"]:
+
                         metadata_value = self.normalize_metadata_value(service_attrs['attrs'].get(entry))
 
-
-                        prometheus_key = self.format_prometheus_metrics_name("{}_{}".format(check_command, "metadata"), entry,
-                                                                                     {})
-                        
-                        prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
-                                                                                            prometheus_key)
+                        prometheus_key = self.format_prometheus_metrics_name("{}_{}".format(check_command, "metadata"),
+                                                                             entry, {})
+                        prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels, prometheus_key)
 
                         self.perfdatadict.update({prometheus_key_with_labels: str(metadata_value)})
 
@@ -127,17 +136,17 @@ class Perfdata:
                     # <prefix>.metadata.execution_time
                     # <prefix>.metadata.latency
 
-                    attrs_keys = ["downtime_depth","acknowledgement","max_check_attempts","last_reachable", "state", "state_type"]
-                    
+                    attrs_keys = ["downtime_depth", "acknowledgement", "max_check_attempts", "last_reachable", "state",
+                                  "state_type"]
+
                     for attr_key in attrs_keys:
                         metadata_value = self.normalize_metadata_value(host_attrs['attrs'].get(attr_key))
 
-
                         prometheus_key = self.format_prometheus_metrics_name("host_metadata", attr_key,
-                                                                                     {})
-                        
+                                                                             {})
+
                         prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
-                                                                                            prometheus_key)
+                                                                                             prometheus_key)
 
                         self.perfdatadict.update({prometheus_key_with_labels: str(metadata_value)})
 
@@ -185,12 +194,13 @@ class Perfdata:
             metrics += key + ' ' + value + '\n'
         return metrics
 
-
     @staticmethod
     def normalize_metadata_value(value):
         if type(value) is bool:
-            if value: return 1.0
-            else: return 0.0
+            if value:
+                return 1.0
+            else:
+                return 0.0
         return value
 
     @staticmethod

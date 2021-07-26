@@ -38,7 +38,7 @@ Example from check command `check_ping` will result in two metrics:
 
 The icinga2-exporter adds a number of labels to each metrics:
 
-- host - is the `host_name` in icinga2
+- hostname - is the `host_name` in icinga2
 - service - is the `display_name` in icinga2
 
 Optional icinga2-exporter can be configured to add specific custom variables configured on the host.
@@ -74,13 +74,35 @@ If we did not make this translation we would got the following:
 
     icinga2_disk_slashvarslashibslashicinga2_bytes{hostname="icinga2", service="disk", os="Docker"} 48356130816.0
 
- Which is not good from a cardinality point of view.
+This would not be good from a cardinality point of view.
+
+# Scrape duration
+
+The scrape duration is a metrics that is reported for all targets. 
+
+    icinga2_scrape_duration_seconds{hostname="<target>", server="<icinga2_server_url>"} 0.160983
+
+# Scrape response
+
+When requests are made to the exporter the following responses are possible:
+
+- A target that exists - return all metrics and http status 200
+- A target does not exists - return no metrics, empty response, and http status 200
+- The export fail to scrape metrics from icinga2 - return empty response and http status 500
+
+In the last scenario the exporter will log the reason for the failed scrape. A failed scrape can
+have multiple reasons, for example:
+
+- The icinga2 server is not responding
+- Not having valid credentials
+- Request to icinga2 timeout
 
 
 # Configuration
 
 ## icinga2-exporter
-All configuration is made in the config.yml file.
+
+The `icinga2-exporter` is configured by a yaml based configuration file.
 
 Example:
 ```yaml
@@ -123,20 +145,20 @@ logger:
 
 > When running with gunicorn the port is selected by gunicorn
 
-# Logging
+## Logging
 
 The log stream is configure in the above config. If `logfile` is not set the logs will go to stdout.
 
 Logs are formatted as json so its easy to store logs in log servers like Loki and Elasticsearch.
 
-# Prometheus configuration
+## Prometheus configuration
 Prometheus can be used with static configuration or with dynamic file discovery using the project [monitor-promdiscovery](https://github.com/opsdis/monitor-promdiscovery).
 
 Please add the job to the `scrape_configs` in prometheus.yml.
 
 > The target is the `host_name` configured in icinga2.
 
-## Static config
+### Static config
 ```yaml
 
 scrape_configs:
@@ -156,7 +178,7 @@ scrape_configs:
 
 ```
 
-## File discovery config for usage with `monitor-promdiscovery`
+### File discovery config for usage with `monitor-promdiscovery`
 
 ```yaml
 
@@ -193,23 +215,32 @@ scrape_configs:
 
 # Running
 
-## Development with quart built in webserver
+## Development
+
+Run the `icinga2-exporter` with the built-in Quart webserver:
 
     python -m  icinga2_exporter -f config.yml
 
-The switch -p enable setting of the port.
+To see all options:
 
-## Production with gunicorn as ASGI continer 
+    python -m  icinga2_exporter -h
+
+## Production with hypercorn as ASGI continer 
+
+Hypercorn is the recommended ASGI container for Quart. Install hypercorn with: 
+
+    pip install hypercorn
 
 Running with default config.yml. The default location is current directory
 
-    gunicorn --access-logfile /dev/null -w 4 -k uvicorn.workers.UvicornWorker "wsgi:create_app()"
+    hypercorn "icinga2_exporter.main:create_app()
 
 Set the path to the configuration file.
 
-    gunicorn --access-logfile /dev/null -w 4 -k uvicorn.workers.UvicornWorker "wsgi:create_app('/etc/icinga2-exporter/config.yml')"
+    hypercorn "icinga2_exporter.main:create_app('/etc/icinga2-exporter/config.yml')"
 
-> Port for gunicorn is default 8000, but can be set with -b, e.g. `-b localhost:9638`
+> Port 8000 is the default port for hypercorn. For more configuration for hypercorn please visit 
+> https://pgjones.gitlab.io/hypercorn/index.html
 
 ## Test the connection
 
@@ -223,7 +254,8 @@ Get metrics for a host where target is a host, `host_name` that exists in icinga
 
 # System requirements
 
-Python 3
+Python 3.
 
-For required packages please review `requirements.txt`
+For required packages please review `requirements.txt`.
+
 

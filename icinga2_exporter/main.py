@@ -55,14 +55,17 @@ def start():
     if args.port:
         port = args.port
 
-    log.configure_logger(configuration)
+    #log.configure_logger(configuration)
 
     monitorconnection.MonitorConfig(configuration)
-    log.info('Starting web app on port: ' + str(port))
+    #log.info('Starting web app on port: ' + str(port))
 
     app = Quart(__name__)
     app.register_blueprint(icinga2, url_prefix='')
-    #list_routes(app)
+
+    log.configure_logger(configuration)
+    log.info('Starting web app on port: ' + str(port))
+
     app.run(host='0.0.0.0', port=port)
 
 
@@ -79,20 +82,12 @@ def create_app(config_path=None):
 
     configuration = config.read_config(config_file)
 
-    log.configure_logger(configuration)
-
     monitorconnection.MonitorConfig(configuration)
-    log.info('Starting web app')
 
     app = Quart(__name__)
     app.register_blueprint(icinga2, url_prefix='')
 
+    log.configure_logger(configuration)
+    log.info('Starting web app')
+
     return app
-
-
-def list_routes(app):
-    import urllib
-    output = []
-    for rule in app.url_map.iter_rules():
-        print("route")
-        print (rule)

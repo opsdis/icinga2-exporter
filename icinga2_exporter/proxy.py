@@ -19,16 +19,16 @@
 
 """
 import asyncio
-from quart import request, Response, jsonify, Quart, Blueprint
+import time
 
 from prometheus_client import (CONTENT_TYPE_LATEST, Counter)
+from quart import request, Response, jsonify, Blueprint
 
-from icinga2_exporter.perfdata import Perfdata
-import icinga2_exporter.monitorconnection as monitorconnection
 import icinga2_exporter.log as log
+import icinga2_exporter.monitorconnection as monitorconnection
+from icinga2_exporter.perfdata import Perfdata
 
-#app = Quart( __name__)
-app = Blueprint( 'icinga2',__name__)
+app = Blueprint('icinga2', __name__)
 total_requests = Counter('requests', 'Total requests to monitor-exporter endpoint')
 
 
@@ -36,38 +36,50 @@ total_requests = Counter('requests', 'Total requests to monitor-exporter endpoin
 def hello_world():
     return 'monitor-exporter alive'
 
-@app.route("/metrics", methods=['GET'])
-async def get_ametrics():
-    log.info(request.url)
-    target = request.args.get('target')
 
-    log.info('Collect metrics', {'target': target})
+@app.route("/metrics", methods=['GET'])
+async def get_metrics():
+    #log.info(request.url)
+    target = request.args.get('target')
 
     monitor_data = Perfdata(monitorconnection.MonitorConfig(), target)
 
     # Fetch performance data from Monitor
-    loop = asyncio.get_event_loop()
-    fetch_perfdata_task = loop.create_task(monitor_data.get_perfdata())
+    start_time = time.monotonic()
+    try:
+        loop = asyncio.get_event_loop()
+        fetch_perfdata_task = loop.create_task(monitor_data.get_perfdata())
 
-    if monitorconnection.MonitorConfig().get_enable_scrape_metadata():
-        fetch_metadata_task = loop.create_task(monitor_data.get_metadata())
-        await fetch_metadata_task
+        if monitorconnection.MonitorConfig().get_enable_scrape_metadata():
+            fetch_metadata_task = loop.create_task(monitor_data.get_metadata())
+            await fetch_metadata_task
 
-    await fetch_perfdata_task
+        await fetch_perfdata_task
 
-    target_metrics = monitor_data.prometheus_format()
+        scrape_duration = time.monotonic() - start_time
+        monitor_data.add_perfdata("scrape_duration_seconds",
+                                  {'hostname': target, 'server': monitorconnection.MonitorConfig().get_url()},
+                                  scrape_duration)
+        log.info("scrape", {'target': target, 'url': request.url, 'scrape_time': scrape_duration})
+        target_metrics = monitor_data.prometheus_format()
 
-    resp = Response(target_metrics)
-    resp.headers['Content-Type'] = CONTENT_TYPE_LATEST
-    #after_request_func(resp)
-    return resp
+        resp = Response(target_metrics)
+        resp.headers['Content-Type'] = CONTENT_TYPE_LATEST
+        # after_request_func(resp)
+        return resp
+    except monitorconnection.ScrapeExecption as err:
+        log.warn(f"{err.message}", {'target': target, 'url': request.url, 'remote_url': err.url, 'err': err.err})
+        resp = Response("")
+        resp.status_code = 500
+        return resp
+
 
 @app.route("/health", methods=['GET'])
 def get_health():
-    return chech_healthy()
+    return check_healthy()
 
 
-#@app.after_request
+# @app.after_request
 def after_request_func(response):
     total_requests.inc()
 
@@ -78,7 +90,7 @@ def after_request_func(response):
     return response
 
 
-def chech_healthy() -> Response:
+def check_healthy() -> Response:
     resp = jsonify({'status': 'ok'})
     resp.status_code = 200
     return resp
