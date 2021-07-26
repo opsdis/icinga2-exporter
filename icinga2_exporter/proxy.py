@@ -19,7 +19,7 @@
 
 """
 import asyncio
-from datetime import datetime
+import time
 
 from prometheus_client import (CONTENT_TYPE_LATEST, Counter)
 from quart import request, Response, jsonify, Blueprint
@@ -45,7 +45,7 @@ async def get_metrics():
     monitor_data = Perfdata(monitorconnection.MonitorConfig(), target)
 
     # Fetch performance data from Monitor
-    start_time = datetime.now()
+    start_time = time.monotonic()
     try:
         loop = asyncio.get_event_loop()
         fetch_perfdata_task = loop.create_task(monitor_data.get_perfdata())
@@ -55,10 +55,10 @@ async def get_metrics():
             await fetch_metadata_task
 
         await fetch_perfdata_task
-        exec_time = datetime.now() - start_time
+
         monitor_data.add_perfdata("scrape_duration_seconds",
                                   {'hostname': target, 'server': monitorconnection.MonitorConfig().get_url()},
-                                  exec_time.total_seconds())
+                                  time.monotonic() - start_time)
 
         target_metrics = monitor_data.prometheus_format()
 
