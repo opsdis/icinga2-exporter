@@ -21,10 +21,10 @@
 import asyncio
 import json
 import time
+from typing import Dict, Any
 
 import aiohttp
 from aiohttp import ClientConnectorError
-from typing import Dict, Any
 
 import icinga2_exporter.log as log
 
@@ -152,10 +152,9 @@ class MonitorConfig(object, metaclass=Singleton):
                                         headers={'Content-Type': 'application/json',
                                                  'X-HTTP-Method-Override': 'GET'},
                                         data=json.dumps(body)) as response:
-
                     re = await response.text()
-                    log.debug(f"method=post url={url} status={response.status} "
-                              f"response_time={time.monotonic() - start_time}")
+                    log.debug(f"request", {'method': 'post', 'url': url, 'status': response.status,
+                                           'response_time': time.monotonic() - start_time})
                     if response.status != 200 and response.status != 201:
                         log.warn(f"{response.reason} status {response.status}")
                         return {}
@@ -187,10 +186,9 @@ class MonitorConfig(object, metaclass=Singleton):
                                        timeout=self.timeout,
                                        headers={'Content-Type': 'application/json',
                                                 'X-HTTP-Method-Override': 'GET'}) as response:
-
                     re = await response.text()
-                    log.debug(f"method=get url={url} status={response.status} "
-                              f"response_time={time.monotonic() - start_time}")
+                    log.debug(f"request", {'method': 'get', 'url': url, 'status': response.status,
+                                           'response_time': time.monotonic() - start_time})
                     if response.status != 200:
                         log.warn(f"{response.reason} status {response.status}")
                         return {}

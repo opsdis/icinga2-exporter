@@ -39,7 +39,7 @@ def hello_world():
 
 @app.route("/metrics", methods=['GET'])
 async def get_metrics():
-    log.info(request.url)
+    #log.info(request.url)
     target = request.args.get('target')
 
     monitor_data = Perfdata(monitorconnection.MonitorConfig(), target)
@@ -56,10 +56,11 @@ async def get_metrics():
 
         await fetch_perfdata_task
 
+        scrape_duration = time.monotonic() - start_time
         monitor_data.add_perfdata("scrape_duration_seconds",
                                   {'hostname': target, 'server': monitorconnection.MonitorConfig().get_url()},
-                                  time.monotonic() - start_time)
-
+                                  scrape_duration)
+        log.info("scrape", {'target': target, 'url': request.url, 'scrape_time': scrape_duration})
         target_metrics = monitor_data.prometheus_format()
 
         resp = Response(target_metrics)
