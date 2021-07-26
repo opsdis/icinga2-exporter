@@ -225,17 +225,22 @@ To see all options:
 
     python -m  icinga2_exporter -h
 
-## Production with gunicorn as ASGI continer 
+## Production with hypercorn as ASGI continer 
+
+Hypercorn is the recommended ASGI container for Quart. Install hypercorn with: 
+
+    pip install hypercorn
 
 Running with default config.yml. The default location is current directory
 
-    gunicorn --access-logfile /dev/null -w 4 -k uvicorn.workers.UvicornWorker "wsgi:create_app()"
+    hypercorn "icinga2_exporter.main:create_app()
 
 Set the path to the configuration file.
 
-    gunicorn --access-logfile /dev/null -w 4 -k uvicorn.workers.UvicornWorker "wsgi:create_app('/etc/icinga2-exporter/config.yml')"
+    hypercorn "icinga2_exporter.main:create_app('/etc/icinga2-exporter/config.yml')"
 
-> Port for gunicorn is default 8000, but can be set with -b, e.g. `-b localhost:9638`
+> Port 8000 is the default port for hypercorn. For more configuration for hypercorn please visit 
+> https://pgjones.gitlab.io/hypercorn/index.html
 
 ## Test the connection
 
@@ -249,7 +254,8 @@ Get metrics for a host where target is a host, `host_name` that exists in icinga
 
 # System requirements
 
-Python 3
+Python 3.
 
-For required packages please review `requirements.txt`
+For required packages please review `requirements.txt`.
+
 
