@@ -68,7 +68,7 @@ async def get_metrics():
         # after_request_func(resp)
         return resp
     except monitorconnection.ScrapeExecption as err:
-        log.warn(f"{err.message} - {err.err}")
+        log.warn(f"{err.message}", {'target': target, 'url': request.url, 'remote_url': err.url, 'err': err.err})
         resp = Response("")
         resp.status_code = 500
         return resp

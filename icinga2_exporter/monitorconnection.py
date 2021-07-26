@@ -30,9 +30,10 @@ import icinga2_exporter.log as log
 
 
 class ScrapeExecption(Exception):
-    def __init__(self, message: str, err: Exception):
+    def __init__(self, message: str, err: Exception, url: str = None):
         self.message = message
         self.err = err
+        self.url = url
 
 
 class Singleton(type):
@@ -162,9 +163,9 @@ class MonitorConfig(object, metaclass=Singleton):
                     return json.loads(re)
 
         except asyncio.TimeoutError as err:
-            raise ScrapeExecption(f"Timeout to {self.host} after {self.timeout}", err)
+            raise ScrapeExecption(message=f"Timeout after {self.timeout} sec", err=err, url=self.host)
         except ClientConnectorError as err:
-            raise ScrapeExecption("Connection error", err)
+            raise ScrapeExecption(message="Connection error", err=err, url=self.host)
 
     async def async_get_metadata(self, hostname) -> Dict[str, Any]:
         # Get performance data from Monitor and return in json format
@@ -196,6 +197,6 @@ class MonitorConfig(object, metaclass=Singleton):
                     return json.loads(re)
 
         except asyncio.TimeoutError as err:
-            raise ScrapeExecption(f"Timeout to {self.host} after {self.timeout}", err)
+            raise ScrapeExecption(message=f"Timeout after {self.timeout} sec", err=err, url=self.host)
         except ClientConnectorError as err:
-            raise ScrapeExecption("Connection error", err)
+            raise ScrapeExecption(message="Connection error", err=err, url=self.host)
