@@ -70,6 +70,7 @@ class MonitorConfig(object, metaclass=Singleton):
         self.labels = []
         self.url_query_service_perfdata = ''
         self.perfname_to_label = []
+        self.host_check_service_name = 'alive'
 
         if config:
             self.user = config[MonitorConfig.config_entry]['user']
@@ -87,6 +88,8 @@ class MonitorConfig(object, metaclass=Singleton):
                 self.verify = bool(config[MonitorConfig.config_entry]['verify'])
             if 'enable_scrape_metadata' in config[MonitorConfig.config_entry]:
                 self.enable_scrape_metadata = bool(config[MonitorConfig.config_entry]['enable_scrape_metadata'])
+            if 'host_check_service_name' in config[MonitorConfig.config_entry]:
+                self.host_check_service_name = config[MonitorConfig.config_entry]['host_check_service_name']
 
             self.url_query_service_perfdata = self.host + '/v1/objects/services'
             self.url_query_host_metadata = self.host + '/v1/objects/hosts/{hostname}'
@@ -114,6 +117,9 @@ class MonitorConfig(object, metaclass=Singleton):
 
     def get_prefix(self):
         return self.config_entry
+
+    def get_host_check_service_name(self):
+        return self.host_check_service_name
 
     def get_labels(self):
         labeldict = {}

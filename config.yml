@@ -16,6 +16,11 @@ icinga2:
   metric_prefix: icinga2
   # Enables a separate request to fetch host metadata like state and state_type
   enable_scrape_metadata: true
+
+  # Set the service name for host check metric, default is alive - only change this if it is a name conflict with other
+  # services
+  # host_check_service_name: alive
+
   # Example of host customer variables that should be added as labels and how to be translated
   host_custom_vars:
     # Specify which custom_vars to extract from hosts in icinga2
