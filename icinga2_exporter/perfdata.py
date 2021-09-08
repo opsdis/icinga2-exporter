@@ -129,7 +129,7 @@ class Perfdata:
                               'address': host_attrs['attrs']['address']}
 
                     # For all host custom vars add as label
-                    labels.update(Perfdata.get_host_custom_vars(host_attrs))
+                    labels.update(Perfdata.get_host_meta_custom_vars(host_attrs))
 
                     # TODO generate calculate missing fields
                     # <prefix>.metadata.current_attempt
@@ -149,6 +149,31 @@ class Perfdata:
                                                                                              prometheus_key)
 
                         self.perfdatadict.update({prometheus_key_with_labels: str(metadata_value)})
+
+                    # Set a default service tag for host check
+                    labels.update({'service': self.monitor.get_host_check_service_name()})
+                    check_command = host_attrs['attrs']['check_command']
+                    for perf_string in host_attrs['attrs']['last_check_result']['performance_data']:
+                        perf = Perfdata.parse_perfdata(perf_string)
+
+                        # For each perfdata metrics
+                        for perf_data_key, perf_data_value in perf.items():
+
+                            if 'value' in perf_data_value:
+                                prometheus_key = self.format_prometheus_metrics_name(check_command, perf_data_key,
+                                                                                     perf_data_value)
+
+                                # Add more labels based on perfname
+                                if check_command in self.perfname_to_label:
+                                    labels.update(
+                                        Perfdata.add_labels_by_items(
+                                            self.perfname_to_label[check_command]['label_name'],
+                                            perf_data_key))
+
+                                prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
+                                                                                                     prometheus_key)
+
+                                self.perfdatadict.update({prometheus_key_with_labels: str(perf_data_value['value'])})
 
         return self.perfdatadict
 
@@ -350,3 +375,11 @@ class Perfdata:
     def add_labels_by_items(label: str, key: str) -> dict:
         item_label = {label.lower(): key}
         return item_label
+
+    @staticmethod
+    def get_host_meta_custom_vars(host_attrs):
+        labels = {}
+        for custom_vars_key, custom_vars_value in host_attrs['attrs']['vars'].items():
+            labels[custom_vars_key.lower()] = custom_vars_value
+
+        return labels
