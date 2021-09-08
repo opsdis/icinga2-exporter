@@ -128,7 +128,11 @@ class MonitorConfig(object, metaclass=Singleton):
         return self.perfname_to_label
 
     async def async_get_perfdata(self, hostname) -> Dict[str, Any]:
-        # Get performance data from Monitor and return in json format
+        """
+        Get the meta and performance data for all services on a hostname
+        :param hostname:
+        :return:
+        """
         body = {"joins": ["host.vars"],
                 "attrs": ["__name", "display_name", "check_command", "last_check_result", "vars", "host_name",
                           "downtime_depth", "acknowledgement", "max_check_attempts", "last_reachable", "state",
@@ -142,7 +146,7 @@ class MonitorConfig(object, metaclass=Singleton):
 
         return data_json
 
-    async def async_post(self, url, body) -> Dict[str, Any]:
+    async def async_post(self, url, body = None) -> Dict[str, Any]:
 
         try:
             async with aiohttp.ClientSession() as session:
@@ -168,35 +172,15 @@ class MonitorConfig(object, metaclass=Singleton):
             raise ScrapeExecption(message="Connection error", err=err, url=self.host)
 
     async def async_get_metadata(self, hostname) -> Dict[str, Any]:
-        # Get performance data from Monitor and return in json format
+        """
+        Get the host data including the meta and performance data
+        :param hostname:
+        :return:
+        """
 
-        data_json = await self.async_get(self.url_query_host_metadata.format(hostname=hostname))
+        data_json = await self.async_post(self.url_query_host_metadata.format(hostname=hostname))
 
         if not data_json:
             log.warn('Received no metadata from Icinga2')
 
         return data_json
-
-    async def async_get(self, url) -> Dict[str, Any]:
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                start_time = time.monotonic()
-                async with session.get(url, auth=aiohttp.BasicAuth(self.user, self.passwd),
-                                       verify_ssl=self.verify,
-                                       timeout=self.timeout,
-                                       headers={'Content-Type': 'application/json',
-                                                'X-HTTP-Method-Override': 'GET'}) as response:
-                    re = await response.text()
-                    log.debug(f"request", {'method': 'get', 'url': url, 'status': response.status,
-                                           'response_time': time.monotonic() - start_time})
-                    if response.status != 200:
-                        log.warn(f"{response.reason} status {response.status}")
-                        return {}
-
-                    return json.loads(re)
-
-        except asyncio.TimeoutError as err:
-            raise ScrapeExecption(message=f"Timeout after {self.timeout} sec", err=err, url=self.host)
-        except ClientConnectorError as err:
-            raise ScrapeExecption(message="Connection error", err=err, url=self.host)
