@@ -55,13 +55,13 @@ class Perfdata:
         metric = {f"{self.prefix}{key}{{{labels_str}}}": str(value)}
         self.perfdatadict.update(metric)
 
-    async def get_perfdata(self) -> dict:
+    async def get_service_metrics(self) -> dict:
         """
         Collect icinga2 data and parse it into prometheus metrics
         :return:
         """
 
-        data_json = await self.monitor.async_get_perfdata(self.query_hostname)
+        data_json = await self.monitor.async_get_service_data(self.query_hostname)
         if 'results' in data_json:
             for service_attrs in data_json['results']:
                 if 'attrs' in service_attrs and 'last_check_result' in service_attrs['attrs'] and \
@@ -114,12 +114,12 @@ class Perfdata:
 
         return self.perfdatadict
 
-    async def get_metadata(self) -> dict:
+    async def get_host_metrics(self) -> dict:
         """
         Collect icinga2 metadata and parse it into prometheus metrics
         :return:
         """
-        data_json = await self.monitor.async_get_metadata(self.query_hostname)
+        data_json = await self.monitor.async_get_host_data(self.query_hostname)
 
         if 'results' in data_json:
             for host_attrs in data_json['results']:

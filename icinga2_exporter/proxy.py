@@ -48,10 +48,10 @@ async def get_metrics():
     start_time = time.monotonic()
     try:
         loop = asyncio.get_event_loop()
-        fetch_perfdata_task = loop.create_task(monitor_data.get_perfdata())
+        fetch_perfdata_task = loop.create_task(monitor_data.get_service_metrics())
 
         if monitorconnection.MonitorConfig().get_enable_scrape_metadata():
-            fetch_metadata_task = loop.create_task(monitor_data.get_metadata())
+            fetch_metadata_task = loop.create_task(monitor_data.get_host_metrics())
             await fetch_metadata_task
 
         await fetch_perfdata_task

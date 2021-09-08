@@ -133,7 +133,7 @@ class MonitorConfig(object, metaclass=Singleton):
     def get_perfname_to_label(self):
         return self.perfname_to_label
 
-    async def async_get_perfdata(self, hostname) -> Dict[str, Any]:
+    async def async_get_service_data(self, hostname) -> Dict[str, Any]:
         """
         Get the meta and performance data for all services on a hostname
         :param hostname:
@@ -149,6 +149,20 @@ class MonitorConfig(object, metaclass=Singleton):
 
         if not data_json:
             log.warn('Received no perfdata from Icinga2')
+
+        return data_json
+
+    async def async_get_host_data(self, hostname) -> Dict[str, Any]:
+        """
+        Get the host data including the meta and performance data
+        :param hostname:
+        :return:
+        """
+
+        data_json = await self.async_post(self.url_query_host_metadata.format(hostname=hostname))
+
+        if not data_json:
+            log.warn('Received no metadata from Icinga2')
 
         return data_json
 
@@ -177,16 +191,3 @@ class MonitorConfig(object, metaclass=Singleton):
         except ClientConnectorError as err:
             raise ScrapeExecption(message="Connection error", err=err, url=self.host)
 
-    async def async_get_metadata(self, hostname) -> Dict[str, Any]:
-        """
-        Get the host data including the meta and performance data
-        :param hostname:
-        :return:
-        """
-
-        data_json = await self.async_post(self.url_query_host_metadata.format(hostname=hostname))
-
-        if not data_json:
-            log.warn('Received no metadata from Icinga2')
-
-        return data_json
