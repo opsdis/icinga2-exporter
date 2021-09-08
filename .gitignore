@@ -25,3 +25,5 @@ sonar-project.properties
 .vscode
 .DS_Store
 RELEASE-VERSION
+build/
+.cache/
