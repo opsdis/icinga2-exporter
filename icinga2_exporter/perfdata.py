@@ -62,11 +62,12 @@ class Perfdata:
         """
 
         data_json = await self.monitor.async_get_service_data(self.query_hostname)
+
         if 'results' in data_json:
             for service_attrs in data_json['results']:
                 if 'attrs' in service_attrs and 'last_check_result' in service_attrs['attrs'] and \
-                        'performance_data' in \
-                        service_attrs['attrs']['last_check_result'] and \
+                        service_attrs['attrs']['last_check_result'] is not None and \
+                        'performance_data' in service_attrs['attrs']['last_check_result'] and \
                         service_attrs['attrs']['last_check_result']['performance_data'] is not None:
                     check_command = service_attrs['attrs']['check_command']
                     service = service_attrs['attrs']['display_name']
