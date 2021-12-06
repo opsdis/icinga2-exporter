@@ -73,7 +73,7 @@ class Perfdata:
                     service = service_attrs['attrs']['display_name']
                     # Get default labels
                     labels = {'hostname': service_attrs['attrs']['host_name'],
-                              'service': service_attrs['attrs']['display_name']}
+                              'service': Perfdata.valid_prometheus_label_values(service_attrs['attrs']['display_name'])}
 
                     # For all host custom vars add as label
                     labels.update(Perfdata.get_host_custom_vars(service_attrs))
@@ -242,7 +242,7 @@ class Perfdata:
                 and 'vars' in service_attrs['joins']['host'] \
                 and service_attrs['joins']['host']['vars'] is not None:
             for custom_vars_key, custom_vars_value in service_attrs['joins']['host']['vars'].items():
-                labels[custom_vars_key.lower()] = custom_vars_value
+                labels[custom_vars_key.lower()] = Perfdata.valid_prometheus_label_values(custom_vars_value)
         return labels
 
     @staticmethod
@@ -381,6 +381,14 @@ class Perfdata:
     def get_host_meta_custom_vars(host_attrs):
         labels = {}
         for custom_vars_key, custom_vars_value in host_attrs['attrs']['vars'].items():
-            labels[custom_vars_key.lower()] = custom_vars_value
+            labels[custom_vars_key.lower()] = Perfdata.valid_prometheus_label_values(custom_vars_value)
 
         return labels
+
+    @staticmethod
+    def valid_prometheus_label_values(value: str) -> str:
+        # Quote backslash
+        if '\\' in value:
+            value = value.replace('\\', '\\\\')
+
+        return value
