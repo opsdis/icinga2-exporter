@@ -387,8 +387,8 @@ class Perfdata:
 
     @staticmethod
     def valid_prometheus_label_values(value: str) -> str:
-        # Quote backslash
-        if '\\' in value:
+        # Quote backslash if it's a str
+        if isinstance(value, str) and '\\' in value:
             value = value.replace('\\', '\\\\')
 
         return value
