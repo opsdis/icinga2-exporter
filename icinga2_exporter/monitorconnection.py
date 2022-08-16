@@ -143,7 +143,7 @@ class MonitorConfig(object, metaclass=Singleton):
                 "attrs": ["__name", "display_name", "check_command", "last_check_result", "vars", "host_name",
                           "downtime_depth", "acknowledgement", "max_check_attempts", "last_reachable", "state",
                           "state_type"],
-                "filter": 'service.host_name==\"{}\"'.format(hostname)}
+                "filter": 'match(\"{}\",service.host_name)'.format(hostname)}
 
         data_json = await self.async_post(self.url_query_service_perfdata, body)
 
