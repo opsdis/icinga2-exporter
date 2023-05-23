@@ -4,4 +4,4 @@ prometheus-client==0.14.1
 python-json-logger==2.0.2
 PyYAML==6.0
 Quart==0.17.0
-requests==2.27.1
+requests==2.31.0
