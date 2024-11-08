@@ -16,8 +16,8 @@ icinga2:
   metric_prefix: icinga2
   # Enables a separate request to fetch host metadata like state and state_type
   enable_scrape_metadata: true
-  # Enables export of warning and critical threshold values
-  enable_scrape_thresholds: true
+  # Enables export of warning and critical threshold values. Default false
+  enable_scrape_thresholds: false
 
   # Set the service name for host check metric, default is alive - only change this if it is a name conflict with other
   # services
