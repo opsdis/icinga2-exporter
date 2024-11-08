@@ -1,8 +1,8 @@
-aiohttp==3.8.5
+aiohttp==3.10.10
 asyncio==3.4.3
 prometheus-client==0.14.1
 python-json-logger==2.0.2
-PyYAML==6.0
+PyYAML==6.0.2
 quart==0.17.0
 requests==2.31.0
 werkzeug==2.3.7
