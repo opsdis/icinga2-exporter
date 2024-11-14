@@ -45,6 +45,7 @@ class Perfdata:
         self.configured_labels = monitor.get_labels()
         self.perfname_to_label = monitor.get_perfname_to_label()
         self.perfdatadict = {}
+        self.enable_scrape_thresholds = monitor.get_enable_scrape_thresholds()
 
     def add_perfdata(self, key: str, labels: Dict[str, str], value: float):
         labels_str = ""
@@ -113,6 +114,45 @@ class Perfdata:
 
                                 self.perfdatadict.update({prometheus_key_with_labels: str(perf_data_value['value'])})
 
+                            # Export threshold values from perfdata if enabled
+                            if self.enable_scrape_thresholds:
+
+                                if 'crit' in perf_data_value:
+                                    threshold_value = perf_data_value.get('crit')
+
+                                    prometheus_key = self.format_prometheus_metrics_name(
+                                        check_command, perf_data_key,perf_data_value) + '_threshold_critical'
+
+                                    # Add more labels based on perfname
+                                    if check_command in self.perfname_to_label:
+                                        labels.update(
+                                            Perfdata.add_labels_by_items(
+                                                self.perfname_to_label[check_command]['label_name'],
+                                                perf_data_key))
+
+                                    prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
+                                                                                                         prometheus_key)
+
+                                    self.perfdatadict.update({prometheus_key_with_labels: str(threshold_value)})
+
+                                if 'warn' in perf_data_value:
+                                    threshold_value = perf_data_value.get('warn')
+
+                                    prometheus_key = self.format_prometheus_metrics_name(
+                                        check_command, perf_data_key, perf_data_value) + '_threshold_warning'
+
+                                    # Add more labels based on perfname
+                                    if check_command in self.perfname_to_label:
+                                        labels.update(
+                                            Perfdata.add_labels_by_items(
+                                                self.perfname_to_label[check_command]['label_name'],
+                                                perf_data_key))
+
+                                    prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
+                                                                                                         prometheus_key)
+
+                                    self.perfdatadict.update({prometheus_key_with_labels: str(threshold_value)})
+
         return self.perfdatadict
 
     async def get_host_metrics(self) -> dict:
@@ -175,6 +215,45 @@ class Perfdata:
                                                                                                      prometheus_key)
 
                                 self.perfdatadict.update({prometheus_key_with_labels: str(perf_data_value['value'])})
+
+                            # Export threshold values from perfdata if enabled
+                            if self.enable_scrape_thresholds:
+
+                                if 'crit' in perf_data_value:
+                                    threshold_value = perf_data_value.get('crit')
+
+                                    prometheus_key = self.format_prometheus_metrics_name(
+                                        check_command, perf_data_key,perf_data_value) + '_threshold_critical'
+
+                                    # Add more labels based on perfname
+                                    if check_command in self.perfname_to_label:
+                                        labels.update(
+                                            Perfdata.add_labels_by_items(
+                                                self.perfname_to_label[check_command]['label_name'],
+                                                perf_data_key))
+
+                                    prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
+                                                                                                         prometheus_key)
+
+                                    self.perfdatadict.update({prometheus_key_with_labels: str(threshold_value)})
+
+                                if 'warn' in perf_data_value:
+                                    threshold_value = perf_data_value.get('warn')
+
+                                    prometheus_key = self.format_prometheus_metrics_name(
+                                        check_command, perf_data_key, perf_data_value) + '_threshold_warning'
+
+                                    # Add more labels based on perfname
+                                    if check_command in self.perfname_to_label:
+                                        labels.update(
+                                            Perfdata.add_labels_by_items(
+                                                self.perfname_to_label[check_command]['label_name'],
+                                                perf_data_key))
+
+                                    prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels,
+                                                                                                         prometheus_key)
+
+                                    self.perfdatadict.update({prometheus_key_with_labels: str(threshold_value)})
 
         return self.perfdatadict
 
@@ -281,6 +360,14 @@ class Perfdata:
             try:
                 norm_value, norm_unit = Perfdata.normalize_to_unit(float(value), uom)
                 metrics[key] = {'value': norm_value, 'unit': norm_unit}
+
+                # Parse critical and warning thresholds if they exist
+                if crit:
+                    norm_crit_value, norm_crit_unit = Perfdata.normalize_to_unit(float(crit), uom)
+                    metrics[key].update({'crit': norm_crit_value})
+                if warn:
+                    norm_warn_value, norm_warn_unit = Perfdata.normalize_to_unit(float(warn), uom)
+                    metrics[key].update({'warn': norm_warn_value})
 
             except ValueError:
                 log.warn(

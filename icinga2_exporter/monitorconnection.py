@@ -71,6 +71,7 @@ class MonitorConfig(object, metaclass=Singleton):
         self.url_query_service_perfdata = ''
         self.perfname_to_label = []
         self.host_check_service_name = 'alive'
+        self.enable_scrape_thresholds = False
 
         if config:
             self.user = config[MonitorConfig.config_entry]['user']
@@ -90,9 +91,14 @@ class MonitorConfig(object, metaclass=Singleton):
                 self.enable_scrape_metadata = bool(config[MonitorConfig.config_entry]['enable_scrape_metadata'])
             if 'host_check_service_name' in config[MonitorConfig.config_entry]:
                 self.host_check_service_name = config[MonitorConfig.config_entry]['host_check_service_name']
+            if 'enable_scrape_thresholds' in config[MonitorConfig.config_entry]:
+                self.enable_scrape_thresholds = bool(config[MonitorConfig.config_entry]['enable_scrape_thresholds'])
 
             self.url_query_service_perfdata = self.host + '/v1/objects/services'
             self.url_query_host_metadata = self.host + '/v1/objects/hosts/{hostname}'
+
+    def get_enable_scrape_thresholds(self):
+        return self.enable_scrape_thresholds
 
     def get_enable_scrape_metadata(self):
         return self.enable_scrape_metadata
@@ -190,4 +196,3 @@ class MonitorConfig(object, metaclass=Singleton):
             raise ScrapeExecption(message=f"Timeout after {self.timeout} sec", err=err, url=self.host)
         except ClientConnectorError as err:
             raise ScrapeExecption(message="Connection error", err=err, url=self.host)
-

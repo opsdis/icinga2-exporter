@@ -24,9 +24,10 @@ Benefits:
 ## Metric names
 Metrics that is scraped with the icinga2-exporter will have the following name structure:
 
-    icinga2_<check_command>_<perfname>_<unit>
+    <metric_prefix>_<check_command>_<perfname>_<unit>
 
-> The icinga2 prefix can be changed by the configuration
+> The metric_prefix can be changed by the configuration, defaults to icinga2
+> 
 > Unit is only added if it exists on performance data
 
 Example from check command `check_ping` will result in two metrics:
@@ -111,39 +112,76 @@ Example:
 #port: 9638
 
 icinga2:
-  # The url to the icinga2 server
-  url: https://127.0.0.1:5665
-  user: root
-  passwd: cf593406ffcfd2ef
-  # All prometheus metrics will be prefixed with this string
-  metric_prefix: icinga2
-  # Example of custom vars that should be added as labels and how to be translated
-  host_custom_vars:
-    # Specify which custom_vars to extract from hosts in icinga2
-    - env:
-        # Name of the label in Prometheus
-        label_name: environment
-    - site:
-        label_name: dc
+   # The url to the icinga2 server
+   url: https://127.0.0.1:5665
+   # The icinga2 username
+   user: root
+   # The icinga2 password
+   passwd: cf593406ffcfd2ef
+   # Verify the ssl certificate, default false
+   verify: false
+   # Timeout accessing icinga server, default 5 sec
+   timeout: 5
+   # All prometheus metrics will be prefixed with this string
+   metric_prefix: icinga2
+   # Enables a separate request to fetch host metadata like state and state_type. Default false
+   enable_scrape_metadata: true
+   # Enables export of warning and critical threshold values. Default false
+   enable_scrape_thresholds: false
 
-  # This section enable that for specific check commands the perfdata metrics name will not be part of the
-  # prometheus metrics name, instead moved to a label
-  # E.g for the disk command the perfdata name will be set to the label disk like:
-  # icinga2_disk_bytes{hostname="icinga2", service="disk", os="Docker", disk="/var/log/icinga2"}
-  perfnametolabel:
+   # Set the service name for host check metric, default is alive - only change this if it is a name conflict with other
+   # services
+   # host_check_service_name: alive
+
+   # Example of host customer variables that should be added as labels and how to be translated
+   host_custom_vars:
+      # Specify which custom_vars to extract from hosts in icinga2
+      - env:
+           # Name of the label in Prometheus
+           label_name: environment
+      - site:
+           label_name: dc
+
+   # This section enable that for specific check commands the perfdata metrics name will not be part of the
+   # prometheus metrics name, instead moved to a label
+   # E.g for the disk command the perfdata name will be set to the label disk like:
+   # icinga2_disk_bytes{hostname="icinga2", service="disk", os="Docker", disk="/var/log/icinga2"}
+   perfnametolabel:
       # The command name
       disk:
-        # the label name to be used
-        label: mount
+         # the label name to be used
+         label_name: mount
 
 logger:
-  # Path and name for the log file. If not set send to stdout
-  logfile: /var/tmp/icinga2-exporter.log
-  # Log level
-  level: INFO
+   # Path and name for the log file. If not set send to stdout
+   logfile: /var/tmp/icinga2-exporter.log
+   # Log level
+   level: INFO
 ```
 
 > When running with gunicorn the port is selected by gunicorn
+
+## enable_scrape_thresholds
+
+Set this to `true` to scrape warning and critical threshold values.
+
+Thresholds that are scraped with the icinga2-exporter will have the following name structure:
+
+    <metric_prefix>_<check_command>_<perfname>_<unit>_threshold_critical
+    <metric_prefix>_<check_command>_<perfname>_<unit>_threshold_warning
+
+> The metric_prefix can be changed by the configuration, defaults to icinga2
+> 
+> Unit is only added if it exists on performance data
+
+Example from check command `check_ping` will result in two metrics together with metrics for critical and warning thresholds:
+
+    icinga2_ping4_rta_seconds
+    icinga2_ping4_rta_seconds_threshold_critical
+    icinga2_ping4_rta_seconds_threshold_warning
+    icinga2_ping_pl_ratio
+    icinga2_ping4_pl_ratio_threshold_critical
+    icinga2_ping4_pl_ratio_threshold_warning
 
 ## Logging
 
