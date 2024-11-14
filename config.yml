@@ -1,5 +1,5 @@
-# Port can be overridden by using -p if running development flask
-#port: 9631
+# Port can be overridden by using -p if running development quart
+#port: 9638
 
 icinga2:
   # The url to the icinga2 server
@@ -14,7 +14,7 @@ icinga2:
   timeout: 5
   # All prometheus metrics will be prefixed with this string
   metric_prefix: icinga2
-  # Enables a separate request to fetch host metadata like state and state_type
+  # Enables a separate request to fetch host metadata like state and state_type. Default false
   enable_scrape_metadata: true
   # Enables export of warning and critical threshold values. Default false
   enable_scrape_thresholds: false
