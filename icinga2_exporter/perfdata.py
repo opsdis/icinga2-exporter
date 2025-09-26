@@ -467,8 +467,9 @@ class Perfdata:
     @staticmethod
     def get_host_meta_custom_vars(host_attrs):
         labels = {}
-        for custom_vars_key, custom_vars_value in host_attrs['attrs']['vars'].items():
-            labels[custom_vars_key.lower()] = Perfdata.valid_prometheus_label_values(custom_vars_value)
+        if type(host_attrs['attrs']['vars']) == dict:
+            for custom_vars_key, custom_vars_value in host_attrs['attrs']['vars'].items():
+                labels[custom_vars_key.lower()] = Perfdata.valid_prometheus_label_values(custom_vars_value)
 
         return labels
 
